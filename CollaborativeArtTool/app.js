@@ -6,6 +6,7 @@ let mode = "mandala"
 let mousePositions = []
 let mandalaCounter = 0
 let MAXMANDALA = 3
+let imgCount = 0
 
 function clearCanvas() {
 	myP5.background("white")
@@ -15,9 +16,15 @@ function rainbowClearCanvas() {
 	myP5.background(Math.random()*360, 85, 80)
 }
 
+function downloadCanvas() {
+	imgName = "img" + imgCount;
+	myP5.saveCanvas(imgName,"jpeg");
+	imgCount = imgCount + 1;
+}
+
 
 document.addEventListener("DOMContentLoaded", function(){
-	console.log("GilbertoPix")
+	console.log("Collaborative Art Tool")
 
 	// Add a processing instance
 
