@@ -22,6 +22,20 @@ function downloadCanvas() {
 	imgCount = imgCount + 1;
 }
 
+function storeCanvas(){
+	var canvas = document.getElementById('defaultCanvas0');
+	var dataURL = canvas.toDataURL("image/jpeg");
+
+	// const xhttp = new XMLHttpRequest(); // possible AJAX call if needed
+  // xhttp.onload = function() {
+  //   document.getElementById("demo").innerHTML =
+  //   this.responseText;
+  // }
+  // xhttp.open("GET", "ajax_info.txt");
+  // xhttp.send();
+
+}
+
 
 document.addEventListener("DOMContentLoaded", function(){
 	console.log("Collaborative Art Tool")
