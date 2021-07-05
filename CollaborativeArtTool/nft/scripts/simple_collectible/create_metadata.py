@@ -17,13 +17,18 @@ def main():
     # use the counter to get the number of collectibles
     number_of_simple_collectibles = simple_collectible.tokenCounter()
     print(
-        "The number of tokens you've deployed is: "
+        "The number of tokens you've deployed so far is: "
         + str(number_of_simple_collectibles)
     )
-    write_metadata(number_of_simple_collectibles, simple_collectible)
+    tokenArray = write_metadata(number_of_simple_collectibles, simple_collectible)
+    return tokenArray
 
 
 def write_metadata(token_ids, nft_contract):
+    latestTokenURI = None
+    latestTokenID = None
+    metadata_file_name = None
+
     for token_id in range(token_ids):
         collectible_metadata = sample_metadata.metadata_template
         metadata_file_name = (
@@ -52,8 +57,10 @@ def write_metadata(token_ids, nft_contract):
             collectible_metadata["image"] = image_to_upload
             with open(metadata_file_name, "w") as file:
                 json.dump(collectible_metadata, file)
-            if os.getenv("UPLOAD_IPFS") == "true":
-                upload_to_ipfs(metadata_file_name)
+            print("About to upload to IPFS")
+            latestTokenURI = upload_to_ipfs(metadata_file_name)
+            latestTokenID = token_id
+    return [latestTokenID, latestTokenURI, metadata_file_name]
 
 # Commands for uploading to IPFS:
 # ipfs daemon
