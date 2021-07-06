@@ -13,12 +13,13 @@
 		<!-- P5 Loaded from a CDN -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
 
-		<!-- Or P5 loaded locally -->
-		<!-- <script src="../../../shared/p5.min.js"></script> -->
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
 
+		<script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
 
 		<script src="vector.js"></script>
 
+		<script src="io.js"></script>
 		<!-- My app's code goes last,
 			because it needs to refer to things in the previous two JS files -->
 		<script src="app.js"></script>
@@ -43,6 +44,9 @@
 			<div id="NFTControls">
 				<button onclick="downloadCanvas()">Download</button>
 				<button onclick="downloadCanvas()">Mint NFT</button>
+			</div>
+
+			<div id="peerjsControls">
 			</div>
 
 		</div>

@@ -8,6 +8,11 @@ let mandalaCounter = 0
 let MAXMANDALA = 3
 let imgCount = 0
 
+let appColors = [[0,0,0]]
+let appCurrentColor = [0,0,0]
+let appCurrentSize = 10
+let appAutodraw = false
+
 function clearCanvas() {
 	myP5.background("white")
 }
@@ -64,6 +69,20 @@ function createRandomDrawer(hue, onDraw) {
 		}
 	}, 30)
 
+}
+
+function init(){
+	io.init()
+
+	// Create a constantly-drawing AI
+	createRandomDrawer(io.hue, (pt, toolData) => {
+  		app.drawAndBroadcast(pt, toolData)
+		})
+
+		// Select some random colors for the palette for asymmetrical drawing (who has green?)
+		for (var i = 0; i < 4; i++) {
+			app.colors.push([Math.random()*360, 100, Math.random()*100])
+		}
 }
 
 document.addEventListener("DOMContentLoaded", function(){
@@ -218,9 +237,9 @@ document.addEventListener("DOMContentLoaded", function(){
 		element);
 })
 
-// Setup and Vue code from https://github.com/galaxykate/codoodle/blob/main/js/app.js
+// Setup and Vue starter code from https://github.com/galaxykate/codoodle/blob/main/js/app.js
 document.addEventListener("DOMContentLoaded", function(){
-	app.init()
+	init()
 
 	Vue.component("color-button", {
 		template: `<button class="colorswatch" @click="setColor" :style="style" ></button>`,
@@ -233,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function(){
 		},
 		methods: {
 			setColor() {
-				app.currentColor = this.color
+				appCurrentColor = this.color
 			}
 		},
 		props: ["color"]
@@ -241,9 +260,8 @@ document.addEventListener("DOMContentLoaded", function(){
 
 	// P5
 	new Vue({
-		el : "#app",
-		template: `<div id="app">
-			<div class="p5-holder" ref="p5"></div>
+		el : "#peerjsControls",
+		template: `<div id="peerjsControls">
 			<div class="drawing controls">
 				<div>
 					<color-button v-for="color in app.colors" :color="color" />
@@ -282,41 +300,10 @@ document.addEventListener("DOMContentLoaded", function(){
 
 		</div>`,
 
-
-		mounted() {
-
-			// Initialize the P5 canvas and handlers
-			// You can ignore this
-			app.p5 = new p5((p) => {
-			 	app.p = p
-
-				noise = p.noise
-
-				// Basic P5 setup and handlers
-				p.setup = () => {
-					p.createCanvas(canvasW, canvasH)
-					p.colorMode(p.HSL)
-					p.ellipseMode(p.RADIUS)
-				}
-
-				p.mouseDragged = () => {
-					// Did the user draw?
-					app.drawAndBroadcast([p.mouseX - p.width/2, p.mouseY - p.height/2])
-				}
-
-				p.draw = () => {
-					app.draw(p)
-				}
-
-			}, this.$refs.p5)
-
-
-		},
-
 		data() {
 			return {
 				io: io,
-				app: app,
+				// app: app,
 
 			}
 		}
