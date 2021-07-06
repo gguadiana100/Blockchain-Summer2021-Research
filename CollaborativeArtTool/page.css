@@ -42,8 +42,8 @@ h1,h2,h3 {
 
 
 canvas {
-	width: 300px;
-	height: 300px;
+	/* width: 600px;
+	height: 600px; */
 	/*border: 20px solid hsla(220, 100%, 90%, 1);*/
 	box-shadow: 0px 4px 5px rgba(0, 0, 0, .5), 0px 0px 0px 10px hsla(220, 100%, 90%, 1);
 
@@ -53,7 +53,7 @@ canvas {
 	border-radius: 10px;
 	background-color: tomato;
 	/* box-shadow: 0px 4px 5px rgba(0, 0, 0, .5); */
-	width: 400px;
+	width: 700px;
 	height: 90%;
 	display: block;
 	position: relative;
