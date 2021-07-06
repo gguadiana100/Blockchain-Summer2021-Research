@@ -51,15 +51,18 @@ def write_metadata(token_ids, nft_contract):
             )
             collectible_metadata["description"] = "A fantastic piece of artwork!"
 
-            image_path = "./img/img{}.jpeg".format(token_id)
-            image_to_upload = upload_to_ipfs(image_path)
+            image_path = "./img/img{}.jpeg".format(token_id) # this assumes that the image was manually put into this path
+            if os.path.isfile(image_path):
+                image_to_upload = upload_to_ipfs(image_path)
 
-            collectible_metadata["image"] = image_to_upload
-            with open(metadata_file_name, "w") as file:
-                json.dump(collectible_metadata, file)
-            print("About to upload to IPFS")
-            latestTokenURI = upload_to_ipfs(metadata_file_name)
-            latestTokenID = token_id
+                collectible_metadata["image"] = image_to_upload
+                with open(metadata_file_name, "w") as file:
+                    json.dump(collectible_metadata, file)
+                print("About to upload to IPFS")
+                latestTokenURI = upload_to_ipfs(metadata_file_name)
+                latestTokenID = token_id
+            else:
+                print("No image file found")
     return [latestTokenID, latestTokenURI, metadata_file_name]
 
 # Commands for uploading to IPFS:

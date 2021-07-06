@@ -19,6 +19,8 @@ def main():
         a_file = open("./tokenURI/tokenURI.json", "w")
         json.dump(json_object, a_file)
         a_file.close()
+        return tokenURI
     else:
         print(tokenArray)
-        print("tokenURI is already present")
+        print("tokenURI is already present or there is no image file")
+        return None
