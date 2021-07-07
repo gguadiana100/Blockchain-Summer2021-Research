@@ -25,9 +25,9 @@ Thank you to the ontology developed by Prof. Kate Compton on marks and strokes a
 1. Starter code was used from Prof. Kate Compton's CS 396: Generative Methods A3 assignment as well as the vector.js library for vector operations.
 2. Base code was taken from Gilberto Guadiana's A3 assignment from Prof. Kate Compton's CS 396: Generative Methods course.
 3. nft-mix from eth-brownie was used as starter code for the NFT portion.
+4. Code used from https://github.com/galaxykate/codoodle
 
 ## Dependencies
 1. P5.js for drawing
 2. eth-brownie for NFT
-3. Flask for running python
-4. 
+3. peer.js for WebRTC

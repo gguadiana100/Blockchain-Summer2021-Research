@@ -7,6 +7,7 @@ let mousePositions = []
 let mandalaCounter = 0
 let MAXMANDALA = 3
 let imgCount = 0
+let autodraw = false
 
 function clearCanvas() {
 	myP5.background("white")
@@ -33,14 +34,42 @@ function storeCanvas(){
   // }
   // xhttp.open("GET", "ajax_info.txt");
   // xhttp.send();
-
 }
 
 
 document.addEventListener("DOMContentLoaded", function(){
 	console.log("Collaborative Art Tool")
+	new Vue({
+		el: '#networkControls',
+		template: `<div id="networkControls">
+					<div v-if="io.isHost">
+						<span style="color:blue">host:</span>
+						<span class="uid">"{{io.roomID}}"</span>
+						<div class="section">
+							connected to:
+							<div v-for="connectedPeer in io.guestConnections">
+								<span class="uid">{{connectedPeer.peer}}</span>
+							</div>
+							<div v-if="io.guestConnections.length === 0" style="font-style:italic">no-one connected yet</div>
+						</div>
+					</div>
+					<div v-else-if="io.isGuest">
+						<span style="color:green">guest:</span>
+						<span class="uid">"{{io.roomID}}"</span>
+						<div style="font-size: 70%">guest id: <span class="uid">{{io.guestID}}</span></div>
+					</div>
+					<div v-else>
+						<span style="color:purple">awaiting connection...</span>
+						Room id:<input v-model="io.roomID"></input>
+						<button @click="io.hostRoom()">create room</button>
+						<button @click="io.joinRoom()">join room</button>
+					</div>
+				</div>`,
 
-	// Add a processing instance
+	})
+
+  // Initialize networking
+	io.init()
 
 	// Create the processing instance, and store it in myP5,
 	// where we can access it anywhere in the code
@@ -54,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
 				console.log("Do setup", p)
 
-				p.createCanvas(300, 300);
+				p.createCanvas(900, 300);
 				p.colorMode(p.HSL);
 
 				// Hue, Sat, Light
