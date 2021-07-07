@@ -65,7 +65,8 @@ let io = {
 				// Receive messages
 				io.hostConnection.on('data', function(data) {
 					// We got data from the host, someone has drawn something
-					app.drawAtPoint([data.pt[0], data.pt[1]], data.toolData)
+
+					drawWithTool(data.toolMode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
 				});
 
 			});
@@ -94,7 +95,7 @@ let io = {
 					// We got data from a guest, this guest has drawn something
 					// Broadcast to everyone else
 					io.broadcastMove(data, conn.peer)
-					app.drawAtPoint([data.pt[0], data.pt[1]], data.toolData)
+					drawWithTool(data.toolMode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
 
 				});
 			});

@@ -132,6 +132,26 @@ function drawWithTool(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, 
 
 }
 
+// Lets broadcast that to the host,
+//  or if we are the host, tell all the other players
+function drawAndBroadcast(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, p) {
+	// You may want to modify the tool data, right now its just size and color
+
+	let data = {
+		toolMode: pt,
+		mandalaCounter: mandalaCounter,
+		mousePositions: mousePositions,
+		mouseX: mouseX,
+		mouseY: mouseY,
+		p: p,
+	}
+
+	// Broadcast it, and draw it to my own canvas
+	io.broadcastMove(data)
+	drawWithTool(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, p)
+},
+
+
 
 document.addEventListener("DOMContentLoaded", function(){
 	console.log("Collaborative Art Tool")
@@ -166,6 +186,8 @@ document.addEventListener("DOMContentLoaded", function(){
 							io: io,
 							mode: mode,
 							mousePositions: mousePositions,
+							mandalaCounter: mandalaCounter,
+							p: p
 						}
 					}
 	})
@@ -206,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function(){
 				// Save this current mouse position in an array with origin in center
 				mousePositions.push([p.mouseX-p.width/2, p.mouseY-p.height/2])
 
-				drawWithTool(mode, mandalaCounter, mousePositions, p.mouseX, p.mouseY, p)
+				drawAndBroadcast(mode, mandalaCounter, mousePositions, p.mouseX, p.mouseY, p)
 
 			},
 
