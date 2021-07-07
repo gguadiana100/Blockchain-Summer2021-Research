@@ -47,6 +47,7 @@ let io = {
 
 
 	joinRoom() {
+    console.log("Beginning to join room")
 		// Let Peerjs assign us an ID
 		io.peer = new Peer();
 
@@ -74,6 +75,7 @@ let io = {
 
 	},
 	hostRoom() {
+    console.log("Beginning to host room")
 		// Open a new connection under our room id
 		io.peer = new Peer(io.prefix + io.roomID);
 

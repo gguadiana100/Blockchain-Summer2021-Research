@@ -2,8 +2,8 @@
 // Outermost scope,
 // You can access these variables from *anywhere*, in fxns, or in html
 let myP5 = undefined
-let mode = "mandala"
-let mousePositions = []
+let mode = "mandala" // defines the drawing tool being used
+let mousePositions = [] // holds the history of mouse positions
 let mandalaCounter = 0
 let MAXMANDALA = 3
 let imgCount = 0
@@ -65,7 +65,13 @@ document.addEventListener("DOMContentLoaded", function(){
 						<button @click="io.joinRoom()">join room</button>
 					</div>
 				</div>`,
-
+		data() {
+						return {
+							io: io,
+							mode: mode,
+							mousePositions: mousePositions,
+						}
+					}
 	})
 
   // Initialize networking
