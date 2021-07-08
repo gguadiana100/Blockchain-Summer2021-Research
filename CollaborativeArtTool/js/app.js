@@ -24,13 +24,13 @@ function rainbowClearCanvas() {
 	changeBackground(currentBackground)
 }
 
-function downloadCanvas() {
+function downloadCanvas() { // get image file of current canvas
 	imgName = "img" + imgCount;
 	myP5.saveCanvas(imgName,"jpeg");
 	imgCount = imgCount + 1;
 }
 
-function storeCanvas(){
+function storeCanvas(){ // gets the dataURL of the canvas
 	var canvas = document.getElementById('defaultCanvas0');
 	var dataURL = canvas.toDataURL("image/jpeg");
 
@@ -44,7 +44,8 @@ function storeCanvas(){
 }
 
 function drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p){
-	switch(mode) {
+	switch(mode) { // use string to decide what tool to use
+
 		// traces strokes in a number of sides based on the mandala counter
 		case "mandala":
 			let numSides = mandalaCounter + 3;
@@ -126,6 +127,12 @@ function drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p){
 
 			break;
 
+		case "pencil":
+			p.fill(0,0,0);
+			p.noStroke();
+			p.circle(p.mouseX, p.mouseY,3)
+			break;
+
 		default:
 			console.warn("UNKNOWN TOOL:" + mode)
 	}
@@ -138,7 +145,7 @@ function drawAndBroadcast(mode, mandalaCounter, mousePositions, mouseX, mouseY, 
 	// You may want to modify the tool data, right now its just size and color
 
 	let data = {
-		mode: mode,
+		mode: "pencil",
 		mandalaCounter: mandalaCounter,
 		mousePositions: mousePositions,
 		mouseX: mouseX,
