@@ -15,6 +15,8 @@ The spray tool is used to blend pixels in the pixel buffer in a rectangular regi
 
 The anchor tool is used to draw fish hook looking objects on screen.
 
+The pencil tool is used to draw streaks of circles on screen.
+
 ## Thank You's
 Thank you to the ontology developed by Prof. Kate Compton on marks and strokes as well as the sample code!
 
