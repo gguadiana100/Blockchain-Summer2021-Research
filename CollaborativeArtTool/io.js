@@ -2,7 +2,7 @@
 
 let io = {
 	// Prefix our rooms with some value so that we don't collide in the Peerjs namespace
-	prefix: "CollaborativeArtTool",
+	prefix: "codoodle",
 
 	// A place to output info
 	log: [],
@@ -31,7 +31,7 @@ let io = {
 		const urlParams = new URLSearchParams(queryString);
 
 		// Autodrawing?
-		appAutodraw = urlParams.get("autodraw")||false
+		app.autodraw = urlParams.get("autodraw")||false
 		// ID of the room we are hosting or connecting to
 		io.roomID = urlParams.get("room")||io.roomID
 
