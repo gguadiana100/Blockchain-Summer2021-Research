@@ -69,7 +69,7 @@ let io = {
 				io.hostConnection.on('data', function(data) {
 					// We got data from the host, someone has drawn something
           console.log("Broadcasting data as guest")
-					drawWithTool(data.toolMode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
+					drawWithTool(data.mode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
 				});
 
 			});
@@ -99,7 +99,7 @@ let io = {
 					// Broadcast to everyone else
 					io.broadcastMove(data, conn.peer)
           console.log("Broadcasting data2")
-					drawWithTool(data.toolMode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
+					drawWithTool(data.mode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
 
 
 				});
@@ -115,21 +115,16 @@ let io = {
       console.log(data)
 		} else if (io.isHost) {
 			// Broadcast to everyone else
-			io.guestConnections.forEach((conn) => {
-
-
-				if (skipPeer === conn.peer) {
-					// Ignore this peer (ie, if we are rebroadcasting a message from a guest, don't send it back to them)
-					// console.log("skip", skipPeer)
-				} else {
-					conn.send(data)
-          console.log("broadcasting to conn")
-          console.log(conn)
-				}
-
-			})
-		}
-
-
+				io.guestConnections.forEach((conn) => {
+					if (skipPeer === conn.peer) {
+						// Ignore this peer (ie, if we are rebroadcasting a message from a guest, don't send it back to them)
+						// console.log("skip", skipPeer)
+					} else {
+						conn.send(data)
+	          console.log("broadcasting to conn")
+	          console.log(conn)
+					}
+				})
+			}
 	}
 }

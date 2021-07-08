@@ -43,8 +43,8 @@ function storeCanvas(){
   // xhttp.send();
 }
 
-function drawWithTool(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, p){
-	switch(toolMode) {
+function drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p){
+	switch(mode) {
 		// traces strokes in a number of sides based on the mandala counter
 		case "mandala":
 			let numSides = mandalaCounter + 3;
@@ -134,11 +134,11 @@ function drawWithTool(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, 
 
 // Lets broadcast that to the host,
 //  or if we are the host, tell all the other players
-function drawAndBroadcast(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, p) {
+function drawAndBroadcast(mode, mandalaCounter, mousePositions, mouseX, mouseY, p) {
 	// You may want to modify the tool data, right now its just size and color
 
 	let data = {
-		toolMode: mode,
+		mode: mode,
 		mandalaCounter: mandalaCounter,
 		mousePositions: mousePositions,
 		mouseX: mouseX,
@@ -148,7 +148,7 @@ function drawAndBroadcast(toolMode, mandalaCounter, mousePositions, mouseX, mous
 
 	// Broadcast it, and draw it to my own canvas
 	io.broadcastMove(data)
-	drawWithTool(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, p)
+	drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p)
 }
 
 
