@@ -43,7 +43,11 @@ function storeCanvas(){ // gets the dataURL of the canvas
   // xhttp.send();
 }
 
-function drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p){
+function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
+	console.log("drawing with tool", mode)
+	let p = myP5
+	p.fill(Math.random()*300,100,50)
+	p.circle(0,0,200)
 	switch(mode) { // use string to decide what tool to use
 
 		// traces strokes in a number of sides based on the mandala counter
@@ -130,7 +134,7 @@ function drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p){
 		case "pencil":
 			p.fill(0,0,0);
 			p.noStroke();
-			p.circle(p.mouseX, p.mouseY,3)
+			p.circle(mouseX,mouseY,3)
 			break;
 
 		default:
@@ -150,12 +154,11 @@ function drawAndBroadcast(mode, mandalaCounter, mousePositions, mouseX, mouseY, 
 		mousePositions: mousePositions,
 		mouseX: mouseX,
 		mouseY: mouseY,
-		p: p,
 	}
 
 	// Broadcast it, and draw it to my own canvas
 	io.broadcastMove(data)
-	drawWithTool(mode, mandalaCounter, mousePositions, mouseX, mouseY, p)
+	drawWithTool(data)
 }
 
 

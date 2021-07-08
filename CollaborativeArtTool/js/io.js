@@ -69,7 +69,7 @@ let io = {
 				io.hostConnection.on('data', function(data) {
 					// We got data from the host, someone has drawn something
           console.log("Broadcasting data as guest")
-					drawWithTool(data.mode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
+					drawWithTool(data)
 				});
 
 			});
@@ -95,11 +95,12 @@ let io = {
 				io.guestConnections.push(conn)
 
 				conn.on('data', function(data) {
+					console.log("received message")
 					// We got data from a guest, this guest has drawn something
 					// Broadcast to everyone else
 					io.broadcastMove(data, conn.peer)
-          console.log("Broadcasting data2")
-					drawWithTool(data.mode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
+          console.log("Broadcasting data ",data.mouseX,data.mouseY)
+					drawWithTool(data)
 
 
 				});
