@@ -138,7 +138,7 @@ function drawAndBroadcast(toolMode, mandalaCounter, mousePositions, mouseX, mous
 	// You may want to modify the tool data, right now its just size and color
 
 	let data = {
-		toolMode: pt,
+		toolMode: mode,
 		mandalaCounter: mandalaCounter,
 		mousePositions: mousePositions,
 		mouseX: mouseX,
@@ -149,7 +149,7 @@ function drawAndBroadcast(toolMode, mandalaCounter, mousePositions, mouseX, mous
 	// Broadcast it, and draw it to my own canvas
 	io.broadcastMove(data)
 	drawWithTool(toolMode, mandalaCounter, mousePositions, mouseX, mouseY, p)
-},
+}
 
 
 
@@ -180,6 +180,9 @@ document.addEventListener("DOMContentLoaded", function(){
 						<button @click="io.hostRoom()">create room</button>
 						<button @click="io.joinRoom()">join room</button>
 					</div>
+					<div>
+						<div class="message-log" v-for="msg in io.log">{{msg}}</div>
+					</div>
 				</div>`,
 		data() {
 						return {
@@ -187,7 +190,7 @@ document.addEventListener("DOMContentLoaded", function(){
 							mode: mode,
 							mousePositions: mousePositions,
 							mandalaCounter: mandalaCounter,
-							p: p
+							p: myP5
 						}
 					}
 	})

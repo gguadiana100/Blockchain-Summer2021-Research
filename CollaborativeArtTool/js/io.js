@@ -56,16 +56,19 @@ let io = {
 
 			// Save the id we connected with as our guest id
 			io.log.push(`Joining room '${io.roomID}' as guest ${id}`)
+      console.log("Joining room as guest")
+
 			io.guestID = id
 
 
 			io.hostConnection = io.peer.connect(io.prefix + io.roomID);
 			io.hostConnection.on('open', function() {
 				io.log.push(`Successfully connected to host '${io.roomID}'`)
+        console.log("Successfully connected to host")
 				// Receive messages
 				io.hostConnection.on('data', function(data) {
 					// We got data from the host, someone has drawn something
-
+          console.log("Broadcasting data as guest")
 					drawWithTool(data.toolMode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
 				});
 
@@ -95,7 +98,9 @@ let io = {
 					// We got data from a guest, this guest has drawn something
 					// Broadcast to everyone else
 					io.broadcastMove(data, conn.peer)
+          console.log("Broadcasting data2")
 					drawWithTool(data.toolMode, data.mandalaCounter, data.mousePositions, data.mouseX, data.mouseY, data.p)
+
 
 				});
 			});
@@ -103,17 +108,23 @@ let io = {
 	},
 
 	broadcastMove(data, skipPeer) {
-
+    console.log(data)
 		if (io.hostConnection) {
+      console.log(io.hostConnection)
 			io.hostConnection.send(data)
+      console.log(data)
 		} else if (io.isHost) {
 			// Broadcast to everyone else
 			io.guestConnections.forEach((conn) => {
+
+
 				if (skipPeer === conn.peer) {
 					// Ignore this peer (ie, if we are rebroadcasting a message from a guest, don't send it back to them)
 					// console.log("skip", skipPeer)
 				} else {
 					conn.send(data)
+          console.log("broadcasting to conn")
+          console.log(conn)
 				}
 
 			})
