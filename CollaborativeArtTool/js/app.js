@@ -10,19 +10,19 @@ let imgCount = 0
 let autodraw = false
 let currentBackground = [360,100,100]
 
-function clearCanvas() {
-	myP5.background(360,100,100)
-	currentBackground = [360,100,100]
-}
+// function clearCanvas() {
+// 	myP5.background(360,100,100)
+// 	currentBackground = [360,100,100]
+// }
 
 function changeBackground(playerBackground){
 	myP5.background(playerBackground[0],playerBackground[1],playerBackground[2])
 }
 
-function rainbowClearCanvas() {
-	currentBackground = [Math.random()*360,85,80]
-	changeBackground(currentBackground)
-}
+// function rainbowClearCanvas() {
+// 	currentBackground = [Math.random()*360,85,80]
+// 	changeBackground(currentBackground)
+// }
 
 function downloadCanvas() { // get image file of current canvas
 	imgName = "img" + imgCount;
@@ -46,8 +46,9 @@ function storeCanvas(){ // gets the dataURL of the canvas
 function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 	console.log("drawing with tool", mode)
 	let p = myP5
-	p.fill(Math.random()*300,100,50)
-	p.circle(0,0,200)
+	p.noiseSeed(99)
+	// p.fill(p.noise(mouseX+mouseY)*360,100,50) // debugging circle
+	// p.circle(0,0,200)
 	switch(mode) { // use string to decide what tool to use
 
 		// traces strokes in a number of sides based on the mandala counter
@@ -89,14 +90,14 @@ function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 			for(var j = 0; j<xstep; j++){
 				let x2 = x + j;
 				// skip between every 4 and 7 pixels
-				if(x2 % (4+Math.floor(3*Math.random())) == 0){
+				if(x2 % (4+Math.floor(3*p.noise(mouseX+mouseY+4))) == 0){
 					continue;
 				}
 
 				for(var k = 0; k<ystep; k++){
 					let y2 = y+k;
 					// skip between every 3 and 5 pixels
-					if(y2 % (3+Math.floor(2*Math.random())) == 0){
+					if(y2 % (3+Math.floor(2*p.noise(mouseX+mouseY+1))) == 0){
 						continue;
 					}
 					currentColor = p.get(x2,y)
@@ -111,7 +112,7 @@ function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 		case "anchor":
 
 			// The current vector
-			let p0 = [p.mouseX, p.mouseY]
+			let p0 = [mouseX, mouseY]
 			p.fill(176,82,53)
 			p.circle(...p0,10)
 			// start right above the circle
@@ -120,7 +121,8 @@ function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 			// get 3 random positions
 			let randPosn = []
 			for(var i = 0; i<3; i++){
-				randPosn.push([100*Math.random(),100*Math.random()])
+				p.noiseSeed(30*i)
+				randPosn.push([100*p.noise(mouseX+mouseY+3),100*p.noise(mouseX+mouseY+2)])
 			}
 			let cp0 = vector.getAdd(p0,randPosn[0])
 			let cp1 = vector.getAdd(cp0, randPosn[1])
@@ -137,6 +139,16 @@ function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 			p.circle(mouseX,mouseY,3)
 			break;
 
+		case "clearCanvas":
+				p.background(360,100,100)
+				currentBackground = [360,100,100]
+				break
+
+		case "colorCanvas":
+				currentBackground = [p.noise(mouseX+mouseY)*360,85,80]
+				changeBackground(currentBackground)
+				break
+
 		default:
 			console.warn("UNKNOWN TOOL:" + mode)
 	}
@@ -149,7 +161,7 @@ function drawAndBroadcast(mode, mandalaCounter, mousePositions, mouseX, mouseY, 
 	// You may want to modify the tool data, right now its just size and color
 
 	let data = {
-		mode: "pencil",
+		mode: mode,
 		mandalaCounter: mandalaCounter,
 		mousePositions: mousePositions,
 		mouseX: mouseX,
