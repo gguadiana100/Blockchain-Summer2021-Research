@@ -42,6 +42,16 @@ function storeCanvas(){ // gets the dataURL of the canvas
   // xhttp.open("GET", "ajax_info.txt");
   // xhttp.send();
 }
+// testing AJAX
+// referencing https://stackoverflow.com/questions/42601478/flask-calling-python-function-on-button-onclick-event
+$(function(){
+	$('#deployContract').on('click', function(e) {
+		e.preventDefault()
+		$.getJSON('/background_process_test',
+		function(data) {});
+				return false;
+			});
+		});
 
 function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 	console.log("drawing with tool", mode)
