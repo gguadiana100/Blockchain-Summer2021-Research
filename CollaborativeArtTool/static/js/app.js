@@ -42,12 +42,23 @@ function storeCanvas(){ // gets the dataURL of the canvas
   // xhttp.open("GET", "ajax_info.txt");
   // xhttp.send();
 }
-// testing AJAX
+
+// Deploy contract button
 // referencing https://stackoverflow.com/questions/42601478/flask-calling-python-function-on-button-onclick-event
 $(function(){
 	$('#deployContract').on('click', function(e) {
 		e.preventDefault()
-		$.getJSON('/background_process_test',
+		$.getJSON('/deploy_nft_script',
+		function(data) {});
+				return false;
+			});
+		});
+
+// Minting NFT button
+$(function(){
+	$('#mintNFT').on('click', function(e) {
+		e.preventDefault()
+		$.getJSON('/mint_nft_script',
 		function(data) {});
 				return false;
 			});
