@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def main():
+    simple_collectible = SimpleCollectible[len(SimpleCollectible) - 1] # get the latest NFT smart contract deployment
+    token_id = simple_collectible.tokenCounter() # get the count
+
     tokenArray = write_metadata(token_id, simple_collectible)
     return tokenArray
 
@@ -21,9 +24,9 @@ def write_metadata(token_count, nft_contract):
 
     collectible_metadata = sample_metadata.metadata_template
     metadata_file_name = (
-        "./metadata/{}/".format(network.show_active())
+        "static/nft/metadata/{}/".format(network.show_active())
         + "img"
-        + str(token_id)
+        + str(token_count)
         + ".json"
     )
     if Path(metadata_file_name).exists(): # check if metadata is already there
@@ -36,12 +39,12 @@ def write_metadata(token_count, nft_contract):
 
         # configure the metadata fields
         collectible_metadata["name"] = "Artistic Collaboration # {}".format(
-            token_id
+            token_count
         )
         collectible_metadata["description"] = "A fantastic piece of artwork!"
 
         # use the file name convention used by the download function
-        image_path = "./img/img{}.jpeg".format(token_count)
+        image_path = "static/nft/img/img{}.jpeg".format(token_count)
         if os.path.isfile(image_path):
             image_to_upload = upload_to_ipfs(image_path)
 
@@ -50,9 +53,9 @@ def write_metadata(token_count, nft_contract):
                 json.dump(collectible_metadata, file)
             print("About to upload to IPFS")
             latestTokenURI = upload_to_ipfs(metadata_file_name)
-            latestTokenID = token_id
+            latestTokenID = token_count
         else:
-            print("No image file found")
+            print("No image file found " + image_path)
     return [latestTokenID, latestTokenURI, metadata_file_name]
 
 # Commands for uploading to IPFS:

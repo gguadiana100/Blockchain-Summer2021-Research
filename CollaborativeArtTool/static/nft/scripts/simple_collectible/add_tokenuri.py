@@ -5,7 +5,7 @@ from scripts.simple_collectible import create_metadata
 
 def main():
     # read tokenURI JSON object
-    a_file = open("./static/nft/tokenURI/tokenURI.json", "r")
+    a_file = open("static/nft/tokenURI/tokenURI.json", "r")
     json_object = json.load(a_file)
     a_file.close()
 
@@ -16,7 +16,7 @@ def main():
     metadataFileName = tokenArray[2]
 
     json_object[tokenID] = tokenURI
-    a_file = open("./tokenURI/tokenURI.json", "w")
+    a_file = open("static/nft/tokenURI/tokenURI.json", "w")
     json.dump(json_object, a_file)
     a_file.close()
     return tokenURI

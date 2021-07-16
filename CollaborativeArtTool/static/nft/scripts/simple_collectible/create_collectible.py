@@ -17,8 +17,9 @@ def main():
 
     tokenURI = add_tokenuri.main()
     # display the tokenURI if you have it
+    print(tokenURI)
     if tokenURI != None:
-        print("Here is the tokenURI: {}").format(tokenURI)
+        print("Here is the tokenURI: {}".format(tokenURI))
     else:
         print("No tokenURI")
     transaction = simple_collectible.createCollectible(tokenURI, {"from": dev})

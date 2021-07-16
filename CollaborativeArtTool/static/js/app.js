@@ -56,7 +56,7 @@ $(function(){
 
 // Minting NFT button
 $(function(){
-	$('#mintNFT').on('click', function(e) {
+	$('#mintNFT').on('click', async function(e) {
 		e.preventDefault()
 		$.getJSON('/mint_nft_script',
 		function(data) {});
@@ -197,6 +197,7 @@ function drawAndBroadcast(mode, mandalaCounter, mousePositions, mouseX, mouseY, 
 
 
 document.addEventListener("DOMContentLoaded", function(){
+
 	console.log("Collaborative Art Tool")
 	new Vue({
 		el: '#networkControls',
