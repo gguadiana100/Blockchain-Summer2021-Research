@@ -10,17 +10,17 @@ def main():
     a_file.close()
 
     tokenArray = create_metadata.main() # get back the latest tokenURI, tokenID, metadata file name
-    if tokenArray[0] != None: # adding JSON element if metadata was created
-        tokenID = tokenArray[0]
-        tokenURI = tokenArray[1]
-        metadataFileName = tokenArray[2]
+    # if tokenArray[0] != None: # adding JSON element if metadata was created
+    tokenID = tokenArray[0]
+    tokenURI = tokenArray[1]
+    metadataFileName = tokenArray[2]
 
-        json_object[tokenID] = tokenURI
-        a_file = open("./tokenURI/tokenURI.json", "w")
-        json.dump(json_object, a_file)
-        a_file.close()
-        return tokenURI
-    else:
-        print(tokenArray)
-        print("tokenURI is already present or there is no image file")
-        return None
+    json_object[tokenID] = tokenURI
+    a_file = open("./tokenURI/tokenURI.json", "w")
+    json.dump(json_object, a_file)
+    a_file.close()
+    return tokenURI
+    # else:
+    #     print(tokenArray)
+    #     print("tokenURI is already present or there is no image file")
+    #     return None

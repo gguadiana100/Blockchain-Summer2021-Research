@@ -3,14 +3,20 @@ from brownie import SimpleCollectible, accounts, network, config
 from scripts.helpful_scripts import OPENSEA_FORMAT
 from scripts.simple_collectible import add_tokenuri
 
-# sample_token_uri = "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=0-PUG.json"
+sample_token_uri = "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=0-PUG.json"
 
 def main():
     dev = accounts.add(config["wallets"]["from_key"])
-    print(network.show_active())
-    simple_collectible = SimpleCollectible[len(SimpleCollectible) - 1]
-    token_id = simple_collectible.tokenCounter()
+    print("Working on " + network.show_active())
+    simple_collectible = SimpleCollectible[len(SimpleCollectible) - 1] # get the latest NFT smart contract deployment
+    token_id = simple_collectible.tokenCounter() # get the count
+    print(
+        "The number of tokens you've deployed so far is: "
+        + str(token_id)
+    )
+
     tokenURI = add_tokenuri.main()
+    # display the tokenURI if you have it
     if tokenURI != None:
         print("Here is the tokenURI: {}").format(tokenURI)
     else:
