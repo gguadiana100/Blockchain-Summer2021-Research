@@ -43,6 +43,27 @@ function storeCanvas(){ // gets the dataURL of the canvas
   // xhttp.send();
 }
 
+// Deploy contract button
+// referencing https://stackoverflow.com/questions/42601478/flask-calling-python-function-on-button-onclick-event
+$(function(){
+	$('#deployContract').on('click', function(e) {
+		e.preventDefault()
+		$.getJSON('/deploy_nft_script',
+		function(data) {});
+				return false;
+			});
+		});
+
+// Minting NFT button
+$(function(){
+	$('#mintNFT').on('click', async function(e) {
+		e.preventDefault()
+		$.getJSON('/mint_nft_script',
+		function(data) {});
+				return false;
+			});
+		});
+
 function drawWithTool({mode, mandalaCounter, mousePositions, mouseX, mouseY}){
 	console.log("drawing with tool", mode)
 	let p = myP5
@@ -176,6 +197,7 @@ function drawAndBroadcast(mode, mandalaCounter, mousePositions, mouseX, mouseY, 
 
 
 document.addEventListener("DOMContentLoaded", function(){
+
 	console.log("Collaborative Art Tool")
 	new Vue({
 		el: '#networkControls',
