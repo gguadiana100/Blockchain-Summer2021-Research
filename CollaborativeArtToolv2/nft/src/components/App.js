@@ -37,7 +37,7 @@ class App extends Component {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  LEARN BLOCKCHAIN <u><b>NOW! </b></u>
+                  LEARN BLOCKCHAIN <u><b>YESTERDAY! </b></u>
                 </a>
               </div>
             </main>
