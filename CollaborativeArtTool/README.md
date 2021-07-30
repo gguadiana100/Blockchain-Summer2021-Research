@@ -1,7 +1,7 @@
 # Collaborative Art Tool by Gilberto Guadiana
 
 ## Description
-A collaborative art tool that aims to use NFT functionality to enhance collaboration.
+A collaborative art tool that aimed to use NFT functionality to enhance collaboration. The NFT functionality does not work and the project was used a research prototype for user testing. The project was live at https://collabarttool-v1.herokuapp.com/. 
 
 ## Instructions
 Tools:

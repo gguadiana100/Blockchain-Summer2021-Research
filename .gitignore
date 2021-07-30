@@ -2,4 +2,4 @@
 CollaborativeArtTool/env/
 *.pyc
 
-CollaborativeArtToolv2/nft/node_modules
+**/NftTruffleTutorial/nft/node_modules/
