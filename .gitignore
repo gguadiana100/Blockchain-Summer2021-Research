@@ -3,3 +3,5 @@ CollaborativeArtTool/env/
 *.pyc
 
 **/NftTruffleTutorial/nft/node_modules/
+
+**/collaborativeminter/node_modules/

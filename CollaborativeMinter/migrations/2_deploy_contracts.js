@@ -1,5 +1,5 @@
-const CollaborativeMinter = artifacts.require("CollaborativeMinter");
+const CollaborativeMinterFactory = artifacts.require("CollaborativeMinterFactory");
 
 module.exports = function(deployer) {
-  deployer.deploy(CollaborativeMinter);
+  deployer.deploy(CollaborativeMinterFactory);
 };
