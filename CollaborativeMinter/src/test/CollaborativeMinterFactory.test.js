@@ -1,5 +1,6 @@
 
-const CollaborativeMinterFactory = artifacts.require('./CollaborativeMinterFactory.sol') // get the smart contract
+const CollaborativeMinterFactory = artifacts.require('./CollaborativeMinterFactory.sol') // get the smart contracts
+const CollaborativeMinter = artifacts.require('./CollaborativeMinter.sol')
 
 require('chai') // import the chai testing library
   .use(require('chai-as-promised'))
@@ -25,33 +26,16 @@ contract('CollaborativeMinterFactory', (accounts) => {
 
     it('can create an NFT smart contract that deploys', async () => {
       const _owners = [accounts[0],accounts[1]]
-      console.log(accounts[0])
-      const NftSmartContract = await contract.createCollaborativeMinter(_owners)
-      const address = NftSmartContract.address
-      console.log(NftSmartContract)
-      console.log(address)
-      // assert.notEqual(address,'')
-      // assert.notEqual(address,0x0)
-      // assert.notEqual(address,null)
-      // assert.notEqual(address,undefined)
-    })
+      console.log(_owners)
+      await contract.createCollaborativeMinter(_owners)
+      const collabMinterAddress = await contract.collaborativeMinters(0) // get the CollabMinter smart contract addresses
+      console.log(collabMinterAddress)
 
-    // it('has a symbol', async () => {
-    //   const symbol = await contract.symbol()
-    //   console.log(symbol)
-    //   assert.equal(symbol,'CART')
-    // })
-    //
-    // it('creates a SimpleCollectible', async () => {
-    //   const result = await contract.createCollectible("hi")
-    //   const bigNumberTokenCounter = await contract.tokenCounter() // gives big number format
-    //   const tokenCounter = bigNumberTokenCounter.toNumber()
-    //   console.log(tokenCounter)
-    //   const firstURI = await contract.tokenURI(0)
-    //   console.log(firstURI)
-    //   assert.equal(tokenCounter,1)
-    //   assert.equal(firstURI,"hi")
-    //
-    // })
+      const contract2 = await CollaborativeMinter.at(collabMinterAddress)
+
+      const symbol = await contract2.symbol()
+      console.log(symbol)
+      assert.equal(symbol,'COMINT')
+    })
   })
 } )

@@ -8,6 +8,7 @@ module.exports = {
   },
   contracts_directory: './src/contracts/',
   contracts_build_directory: './src/build/',
+  migrations_directory: './src/migrations/',
   compilers: {
     solc: {
       version: "^0.8.0",

@@ -12,6 +12,6 @@ contract CollaborativeMinterFactory {
   function createCollaborativeMinter(address[] memory _owners) public returns (address) {
     CollaborativeMinter newCollaborativeMinter = new CollaborativeMinter(_owners);
     collaborativeMinters.push(address(newCollaborativeMinter));
-    return address(newCollaborativeMinter);
+    return collaborativeMinters[(collaborativeMinters.length-1)];
   }
 }
