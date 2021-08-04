@@ -5,10 +5,6 @@ import NftInterface from "./NftInterface";
 function App() {
   const [todos, setTodos] = useState([])
 
-  function handleAddTodo(e) {
-
-  }
-
   return (
     <>
       <NftInterface todos={todos}/>

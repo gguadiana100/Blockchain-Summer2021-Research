@@ -16,6 +16,11 @@ contract CollaborativeMinter is ERC721URIStorage {
     constructor (address[] memory _owners) public ERC721 ("Collaborative Mint", "COMINT"){
       require(_owners.length > 0, "owners required");
       tokenCounter = 0;
+      currentOwner = 0; // define the first owner to have an active turn
+      for(uint i = 0; i < _owners.length; i++){ // define the owners
+        owners.push(_owners[i]);
+        isOwner[_owners[i]] = true;
+      }
     }
 
     modifier onlyCurrentOwner { // restrict to only the active owner
