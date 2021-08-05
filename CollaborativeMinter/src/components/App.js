@@ -143,7 +143,7 @@ function App() {
         <input type="text" placeholder='cominter address' ref={findGameRef}/>
         <div style={{ margin: 10 }}>
           <button onClick={handleCreateGame}> Create Game </button>
-          <input type="text" placeholder='owners' ref={createGameRef}/>
+          <input type="text" placeholder='[owner0Address,...]' ref={createGameRef}/>
         </div>
       </div>
 
