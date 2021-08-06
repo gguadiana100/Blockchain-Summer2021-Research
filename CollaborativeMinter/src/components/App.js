@@ -12,7 +12,7 @@ function App() {
   const [values, setValues] = useState({account: "", buffer: "Submit a picture",
     factoryContract: "Connect a factory contract",
     minterContract: {_address: "Connect a cominter contract"},
-    minterTokenCounter: "Connect a cominter contract",
+    minterTokenCount: "Connect a cominter contract",
     cominterTurn: "Connect a cominter contract"}); // set state variables to null
 
   const findGameRef = useRef()
@@ -87,7 +87,6 @@ function App() {
 
         try{
           const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress)
-          console.log(factoryContract)
           setValues( prevValues => {
             return {...prevValues, factoryContract: factoryContract}
           })
@@ -108,23 +107,43 @@ function App() {
   }
 
   const handleCreateGame = async () => {
-    const _owners = eval(createGameRef.current.value) // turn string into array
-    console.log(_owners)
+    if(values.factoryContract === "Connect a factory contract"){
+      console.log("add factory contract")
+      return
+    }
+
+    let _owners
+
+    try{
+      _owners = JSON.parse(createGameRef.current.value)
+    }
+    catch{
+      console.log("provide valid input")
+      return
+    }
 
     const web3 = window.web3
-
-    // const factoryAbi = CollaborativeMinterFactory.abi
-    // const factoryContract = new web3.eth.Contract(factoryAbi, values.factoryAddress)
     const factoryContract = values.factoryContract;
 
-    console.log(factoryContract)
-    const newGameAddress = await factoryContract.methods.createCollaborativeMinter(_owners).call()
+    // deploy the collaborative minter
+    const newGameAddressTransaction = await factoryContract.methods.createCollaborativeMinter(_owners).send(
+      {from: values.account},
+      function(error, result){
+        return result
+      })
+    const newGameIndex = await factoryContract.methods.getNumberOfCollaborativeMinters(values.account).call() - 1
+    const newGameAddressIndex = await factoryContract.methods.accountToCominters(values.account,newGameIndex).call()
+    const newGameAddress = await factoryContract.methods.collaborativeMinters(newGameAddressIndex).call()
+
     const minterAbi = CollaborativeMinter.abi
     const minterContract = new web3.eth.Contract(minterAbi, newGameAddress)
+    const cominterTurnIndex = await minterContract.methods.currentOwner().call()
+    const cominterTurn = await minterContract.methods.owners(cominterTurnIndex).call()
+    const minterTokenCount = await minterContract.methods.tokenCounter().call()
 
-    console.log(minterContract)
     setValues(prevValues => {
-      return {...prevValues, minterContract: minterContract}
+      return {...prevValues, minterContract: minterContract, cominterTurn: cominterTurn,
+        minterTokenCount: minterTokenCount}
     })
 
   }
@@ -181,7 +200,7 @@ function App() {
         <h2> Address: {values.account} </h2>
         <h2> Factory address: {values.factoryContract._address} </h2>
         <h3> Cominter address: {values.minterContract._address} </h3>
-        <h3> Cominter token count: {values.minterTokenCounter} </h3>
+        <h3> Cominter token count: {values.minterTokenCount} </h3>
         <h3> Cominter turn: {values.cominterTurn} </h3>
         <h3> Loaded picture: {values.buffer} </h3>
       </div>
@@ -193,7 +212,7 @@ function App() {
         <input type="text" placeholder='factory address' ref={findFactoryRef}/>
         <div style={{ margin: 10 }}>
           <button onClick={handleCreateGame}> Create Game </button>
-          <input type="text" placeholder='[owner0Address,...]' ref={createGameRef}/>
+          <input type="text" placeholder='["owner0Address",...]' ref={createGameRef}/>
         </div>
       </div>
 

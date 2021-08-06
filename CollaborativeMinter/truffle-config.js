@@ -18,7 +18,7 @@ module.exports = {
   migrations_directory: './src/migrations/',
   compilers: {
     solc: {
-      version: "^0.8.0",
+      version: "^0.8.6",
       optimizer: {
         enabled: true,
         runs: 200
