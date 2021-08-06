@@ -11,7 +11,8 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 5. Web Dev Simplified's tutorial "Learn React In 30 Minutes"
 6. Collaborative icon by "Pixelmeetup" from Flaticon
 7. Dapp University's tutorial "How to Build Ethereum Dapp With IPFS - Blockchain Programming Tutorial"
-8. 
+8. Dapp University's tutorial "2. Deploy Smart Contracts - Geth, Rinkeby & Truffle Tutorial"
+9. PatrickAlphaC's ETH Brownie nft-mix
 
 ## References
 1. https://github.com/t4sk/solidity-multi-sig-wallet/blob/master/contracts/MultiSigWallet.sol
@@ -21,4 +22,5 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 5. https://www.youtube.com/watch?v=hQAHSlTtcmY&ab_channel=WebDevSimplified
 6. https://www.flaticon.com/authors/pixelmeetup
 7. https://www.youtube.com/watch?v=pTZVoqBUjvI&ab_channel=DappUniversity
-8.
+8. https://www.youtube.com/watch?v=_rumMSlrmiI&ab_channel=DappUniversity
+9. https://github.com/PatrickAlphaC/nft-mix

@@ -17,6 +17,7 @@ function App() {
 
   const findGameRef = useRef()
   const createGameRef = useRef()
+  const findFactoryRef = useRef()
 
   const captureFile = (event) => { // used to process image for IPFS
     event.preventDefault()
@@ -77,8 +78,54 @@ function App() {
     }
   }
 
-  const handleCreateGame = () => {
+  const handleFindFactory = () => {
+    const factoryAddress = findFactoryRef.current.value
+    if(parseInt(factoryAddress)) { // check if we have a number
+      async function addMinterContract() {
+        const web3 = window.web3
+        const factoryAbi = CollaborativeMinterFactory.abi
 
+        try{
+          const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress)
+          console.log(factoryContract)
+          setValues( prevValues => {
+            return {...prevValues, factoryContract: factoryContract}
+          })
+        }
+        catch { // smart contract is not on network
+          setValues(prevValues => {
+            return {...prevValues, minterContract: {_address: "Input a valid cominter address"}}
+          })
+        }
+      }
+      addMinterContract()
+    }
+    else{
+      setValues(prevValues => {
+        return {...prevValues, minterContract: {_address: "Input a valid cominter address"}}
+      })
+    }
+  }
+
+  const handleCreateGame = async () => {
+    const _owners = eval(createGameRef.current.value) // turn string into array
+    console.log(_owners)
+
+    const web3 = window.web3
+
+    // const factoryAbi = CollaborativeMinterFactory.abi
+    // const factoryContract = new web3.eth.Contract(factoryAbi, values.factoryAddress)
+    const factoryContract = values.factoryContract;
+
+    console.log(factoryContract)
+    const newGameAddress = await factoryContract.methods.createCollaborativeMinter(_owners).call()
+    const minterAbi = CollaborativeMinter.abi
+    const minterContract = new web3.eth.Contract(minterAbi, newGameAddress)
+
+    console.log(minterContract)
+    setValues(prevValues => {
+      return {...prevValues, minterContract: minterContract}
+    })
 
   }
 
@@ -122,6 +169,7 @@ function App() {
       }
       await loadWeb3()
       await loadBlockchainData()
+
     }
     startup()
   },[])
@@ -141,6 +189,8 @@ function App() {
       <div>
         <button onClick={handleFindGame}> Find game with address</button>
         <input type="text" placeholder='cominter address' ref={findGameRef}/>
+        <button onClick={handleFindFactory}> Find factory with address</button>
+        <input type="text" placeholder='factory address' ref={findFactoryRef}/>
         <div style={{ margin: 10 }}>
           <button onClick={handleCreateGame}> Create Game </button>
           <input type="text" placeholder='[owner0Address,...]' ref={createGameRef}/>
