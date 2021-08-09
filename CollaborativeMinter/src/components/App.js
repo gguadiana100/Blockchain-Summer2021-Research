@@ -13,12 +13,14 @@ function App() {
     factoryContract: {_address: "Connect a factory contract"},
     minterContract: {_address: "Connect a cominter contract"},
     minterTokenCount: "Connect a cominter contract",
+    minterOwners: [],
     cominterTurn: "Connect a cominter contract",
     ipfsHashes: [],}); // set state variables to null
 
   const findGameRef = useRef()
   const createGameRef = useRef()
   const findFactoryRef = useRef()
+  const nameSubmit = useRef()
 
   const captureFile = (event) => { // used to process image for IPFS
     event.preventDefault()
@@ -36,11 +38,54 @@ function App() {
 
  const onSubmit = async (event) => { // used to send image to IPFS
     event.preventDefault()
+    if(values.cominterTurn != values.account){ // check if it is your turn to submit
+      console.log("It is not your turn")
+      return
+    }
     console.log("Submitting file to IPFS...")
     const result = await ipfs.add(values.buffer)
-    console.log("IPFS result", result)
+    console.log("IPFS result of image", result)
+
+    console.log("Creating collectible")
+
+    const web3 = window.web3
+    const minterContract = values.minterContract;
+
+    // get the information for the metadata JSON
+    const description = "This stage of the artwork was submitted by " + values.account
+    let imageURL = "https://ipfs.io/ipfs/" + result.path // IPFS URL
+    const image = imageURL
+    const name = nameSubmit.current.value // get the name input
+
+    const metadataJson = JSON.stringify({
+      "description": description,
+      "image": image,
+      "name": name,
+    });
+
+    console.log("Submitting metadata to IPFS...")
+    const metadataResult = await ipfs.add(metadataJson)
+    console.log("IPFS result of metadata", metadataResult)
+
+    let metadataUri = "https://ipfs.io/ipfs/" + metadataResult.path
+    console.log(metadataUri)
+    let newTokenTransaction = await minterContract.methods.collaborativeMint(metadataUri).send( // create the collectible
+      {from: values.account},
+      function(error, result){
+        return result
+      })
+
+    // update the state based on the smart contract values
+    const cominterTurnIndex = await minterContract.methods.currentOwner().call()
+    const cominterTurn = await minterContract.methods.owners(cominterTurnIndex).call()
+    const minterTokenCount = await minterContract.methods.tokenCounter().call()
+    console.log("Finished creating collectible")
+
     setValues(prevValues => {
-      return {...prevValues, ipfsHashes: [...prevValues.ipfsHashes, result.path]}
+      return {...prevValues,
+        ipfsHashes: [...prevValues.ipfsHashes, result.path, metadataResult.path],
+        cominterTurn: cominterTurn,
+        minterTokenCount: minterTokenCount}
     })
   }
 
@@ -49,7 +94,7 @@ function App() {
 
     if(length !== 0){
       const hash = values.ipfsHashes[length-1]
-      const path = "https://ipfs.infura.io/ipfs/" + hash // get IPFS URL
+      const path = "https://ipfs.io/ipfs/" + hash // get IPFS URL
       console.log("The IPFS path to the image is: ", path)
 
       // create element and add to DOM with IPFS URL as image source
@@ -84,7 +129,6 @@ function App() {
           })
         }
         catch { // smart contract is not on network
-          console.log("we got an error in the try block")
           setValues(prevValues => {
             return {...prevValues, minterContract: {_address: "Input a valid cominter address"}}
           })
@@ -181,14 +225,14 @@ function App() {
     const factoryContract = values.factoryContract;
     const minterContract = values.minterContract
 
-    const paths = 0
-
-    // displayTurns()
-
-  }
-
-  const displayTurns = async (_paths) => { // pass in an array of paths to the
-    const numTurns = _paths.length
+    const numTurns = values.tokenCounter
+    let paths = []
+    for (let i = 0; i < numTurns; i++){ // iterate through the deployed NFTs of the minter
+      let uri = await minterContract.methods.tokenURI(i).call()
+      console.log(uri)
+      // let hash = 0
+      // let path = "https://ipfs.io/ipfs/" + hash
+    }
 
   }
 
@@ -214,21 +258,21 @@ function App() {
           return {...prevValues, account: accounts[0]}
         })
         // get info from CollaborativeMinterFactory JSON
-        const networkId = await web3.eth.net.getId()
-        const networkData = CollaborativeMinterFactory.networks[networkId]
-
-        if(networkData){
-          const abi = CollaborativeMinterFactory.abi
-          const address = networkData.address
-          const factoryContract = new web3.eth.Contract(abi, address)
-          console.log(factoryContract)
-          setValues(prevValues => {
-            return {...prevValues, factoryContract: factoryContract}
-          })
-        }
-        else {
-          window.alert('The smart contract is not deployed on this network')
-        }
+        // const networkId = await web3.eth.net.getId()
+        // const networkData = CollaborativeMinterFactory.networks[networkId]
+        //
+        // if(networkData){
+        //   const abi = CollaborativeMinterFactory.abi
+        //   const address = networkData.address
+        //   const factoryContract = new web3.eth.Contract(abi, address)
+        //   console.log(factoryContract)
+        //   setValues(prevValues => {
+        //     return {...prevValues, factoryContract: factoryContract}
+        //   })
+        // }
+        // else {
+        //   window.alert('The smart contract is not deployed on this network')
+        // }
       }
       await loadWeb3()
       await loadBlockchainData()
@@ -271,9 +315,13 @@ function App() {
       </div>
 
       <div>
+        <p>
+          <b> Submit to the game </b>
+        </p>
         <form onSubmit={onSubmit}>
           <input type='file' onChange={captureFile} />
-          <input type='submit' value='Submit Picture'/>
+          <input type='text' placeholder='name of your work' ref={nameSubmit}/>
+          <input type='submit' value='Submit your turn'/>
         </form>
         <button style={{ margin: 10 }} onClick={displayLatestIPFS}> Display latest from IPFS </button>
       </div>
