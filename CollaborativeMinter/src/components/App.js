@@ -9,11 +9,12 @@ const ipfs = create({ host: 'ipfs.infura.io', port: '5001', protocol: 'https' })
 
 function App() {
 
-  const [values, setValues] = useState({account: "", buffer: "Submit a picture",
-    factoryContract: "Connect a factory contract",
+  const [values, setValues] = useState({account: "Connect an ETH account", buffer: "Submit a picture",
+    factoryContract: {_address: "Connect a factory contract"},
     minterContract: {_address: "Connect a cominter contract"},
     minterTokenCount: "Connect a cominter contract",
-    cominterTurn: "Connect a cominter contract"}); // set state variables to null
+    cominterTurn: "Connect a cominter contract",
+    ipfsHashes: [],}); // set state variables to null
 
   const findGameRef = useRef()
   const createGameRef = useRef()
@@ -22,7 +23,7 @@ function App() {
   const captureFile = (event) => { // used to process image for IPFS
     event.preventDefault()
     const file = event.target.files[0]
-    console.log(event.target.files[0])
+    console.log("Starting to process:", event.target.files[0])
     const reader = new window.FileReader()
     reader.readAsArrayBuffer(file)
     reader.onloadend = () => {
@@ -30,18 +31,37 @@ function App() {
         return {...prevValues, buffer: Buffer(reader.result)}
       })
     }
+    console.log("Finished processing file")
   }
 
- const onSubmit = (event) => { // used to send image to IPFS
+ const onSubmit = async (event) => { // used to send image to IPFS
     event.preventDefault()
     console.log("Submitting file to IPFS...")
-    ipfs.add(values.buffer, (error, result) => {
-      console.log('IPFS result', result)
-      if(error) {
-        console.error(error)
-        return
-      }
+    const result = await ipfs.add(values.buffer)
+    console.log("IPFS result", result)
+    setValues(prevValues => {
+      return {...prevValues, ipfsHashes: [...prevValues.ipfsHashes, result.path]}
     })
+  }
+
+  const displayLatestIPFS = async (event) => {
+    const length = values.ipfsHashes.length
+
+    if(length !== 0){
+      const hash = values.ipfsHashes[length-1]
+      const path = "https://ipfs.infura.io/ipfs/" + hash // get IPFS URL
+      console.log("The IPFS path to the image is: ", path)
+
+      // create element and add to DOM with IPFS URL as image source
+      const image = document.createElement("img")
+      image.src = path
+      document.body.appendChild(image)
+
+      console.log("Displaying latest IPFS.")
+    }
+    else{
+      console.log("No files uploaded to IPFS")
+    }
   }
 
   const handleFindGame = () => {
@@ -107,7 +127,7 @@ function App() {
   }
 
   const handleCreateGame = async () => {
-    if(values.factoryContract === "Connect a factory contract"){
+    if(values.factoryContract._address === "Connect a factory contract"){
       console.log("add factory contract")
       return
     }
@@ -145,6 +165,24 @@ function App() {
       return {...prevValues, minterContract: minterContract, cominterTurn: cominterTurn,
         minterTokenCount: minterTokenCount}
     })
+
+  }
+
+  const handleLoadGame = async () => {
+    if(values.minterContract._address === "Connect a cominter contract"){
+      console.log("Create a game first!")
+      return
+    }
+
+    const web3 = window.web3
+    const factoryContract = values.factoryContract;
+    const minterContract = values.minterContract
+
+    displayGame()
+
+  }
+
+  const displayGame = async () => {
 
   }
 
@@ -197,12 +235,21 @@ function App() {
     <>
       <div>
         <h2>Collaborative Minter</h2>
-        <h2> Address: {values.account} </h2>
-        <h2> Factory address: {values.factoryContract._address} </h2>
-        <h3> Cominter address: {values.minterContract._address} </h3>
-        <h3> Cominter token count: {values.minterTokenCount} </h3>
-        <h3> Cominter turn: {values.cominterTurn} </h3>
-        <h3> Loaded picture: {values.buffer} </h3>
+
+        <p>
+          <b> User Address: </b> {values.account}
+          <b> Factory address: </b> {values.factoryContract._address}
+        </p>
+
+        <p>
+          <b> Cominter address: </b> {values.minterContract._address}
+          <b> Cominter token count: </b> {values.minterTokenCount}
+          <b> Cominter turn: </b> {values.cominterTurn}
+        </p>
+        <p>
+          <b> Loaded picture: </b> {values.buffer}
+          <b> IPFS Hashes: </b> {values.ipfsHashes}
+        </p>
       </div>
 
       <div>
@@ -213,6 +260,7 @@ function App() {
         <div style={{ margin: 10 }}>
           <button onClick={handleCreateGame}> Create Game </button>
           <input type="text" placeholder='["owner0Address",...]' ref={createGameRef}/>
+          <button onClick={handleLoadGame}> Load Game </button>
         </div>
       </div>
 
@@ -221,6 +269,7 @@ function App() {
           <input type='file' onChange={captureFile} />
           <input type='submit' value='Submit Picture'/>
         </form>
+        <button style={{ margin: 10 }} onClick={displayLatestIPFS}> Display latest from IPFS </button>
       </div>
     </>
   );
