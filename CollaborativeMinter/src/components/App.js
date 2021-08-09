@@ -71,19 +71,20 @@ function App() {
         const web3 = window.web3
         const minterAbi = CollaborativeMinter.abi
 
-        const networkId = await web3.eth.net.getId()
-        const networkData = CollaborativeMinter.networks[networkId]
-
-        if(networkData){
+        try{
           const minterContract = new web3.eth.Contract(minterAbi, minterAddress)
-          const currentOwner = await minterContract.methods.currentOwner().call()
-          console.log(currentOwner)
-          console.log(minterContract)
-          setValues( prevValues => {
-            return {...prevValues, minterContract: minterContract}
+          // test to see if the minter contract is valid
+          const cominterTurnIndex = await minterContract.methods.currentOwner().call()
+          const cominterTurn = await minterContract.methods.owners(cominterTurnIndex).call()
+          const minterTokenCount = await minterContract.methods.tokenCounter().call()
+
+          setValues(prevValues => {
+            return {...prevValues, minterContract: minterContract, cominterTurn: cominterTurn,
+              minterTokenCount: minterTokenCount}
           })
         }
-        else { // smart contract is not on network
+        catch { // smart contract is not on network
+          console.log("we got an error in the try block")
           setValues(prevValues => {
             return {...prevValues, minterContract: {_address: "Input a valid cominter address"}}
           })
@@ -101,27 +102,29 @@ function App() {
   const handleFindFactory = () => {
     const factoryAddress = findFactoryRef.current.value
     if(parseInt(factoryAddress)) { // check if we have a number
-      async function addMinterContract() {
+      async function addFactoryContract() {
         const web3 = window.web3
         const factoryAbi = CollaborativeMinterFactory.abi
 
         try{
           const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress)
+          // test to see if the factory contract is valid
+          factoryContract.methods.collaborativeMinters(0).call()
           setValues( prevValues => {
             return {...prevValues, factoryContract: factoryContract}
           })
         }
         catch { // smart contract is not on network
           setValues(prevValues => {
-            return {...prevValues, minterContract: {_address: "Input a valid cominter address"}}
+            return {...prevValues, factoryContract: {_address: "Input a valid factory address"}}
           })
         }
       }
-      addMinterContract()
+      addFactoryContract()
     }
     else{
       setValues(prevValues => {
-        return {...prevValues, minterContract: {_address: "Input a valid cominter address"}}
+        return {...prevValues, factoryContract: {_address: "Input a valid factory address"}}
       })
     }
   }
@@ -178,11 +181,14 @@ function App() {
     const factoryContract = values.factoryContract;
     const minterContract = values.minterContract
 
-    displayGame()
+    const paths = 0
+
+    // displayTurns()
 
   }
 
-  const displayGame = async () => {
+  const displayTurns = async (_paths) => { // pass in an array of paths to the
+    const numTurns = _paths.length
 
   }
 
