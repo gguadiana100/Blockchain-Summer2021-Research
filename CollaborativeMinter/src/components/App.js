@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Web3 from 'web3';
-import CollaborativeMinterFactory from '../build/CollaborativeMinterFactory.json'
-import CollaborativeMinter from '../build/CollaborativeMinter.json'
+import CollaborativeMinterFactory from '../build/CollaborativeMinterFactory.json';
+import CollaborativeMinter from '../build/CollaborativeMinter.json';
+import $ from 'jquery';
 
 const {create} = require('ipfs-http-client')
 const ipfs = create({ host: 'ipfs.infura.io', port: '5001', protocol: 'https' }) // use infura public gateway
@@ -225,13 +226,28 @@ function App() {
     const factoryContract = values.factoryContract;
     const minterContract = values.minterContract
 
-    const numTurns = values.tokenCounter
+    const numTurns = values.minterTokenCount
     let paths = []
+    console.log("Beginning to display tokenURIs")
     for (let i = 0; i < numTurns; i++){ // iterate through the deployed NFTs of the minter
       let uri = await minterContract.methods.tokenURI(i).call()
-      console.log(uri)
-      // let hash = 0
-      // let path = "https://ipfs.io/ipfs/" + hash
+      // console.log(uri) // IPFS link to the metadata
+      $.getJSON(uri, function(data){
+        if(data != null){
+          let imageUrl = data.image
+          let turn = document.createElement("p"); // Add sequence of images to the DOM
+          let text = "Turn: " + i;
+          let turnNumber = document.createTextNode(text);
+          turn.appendChild(turnNumber)
+          document.body.appendChild(turn);
+          let img = document.createElement("img");
+          img.src = imageUrl;
+          document.body.appendChild(img);
+        }
+      })
+
+
+
     }
 
   }
