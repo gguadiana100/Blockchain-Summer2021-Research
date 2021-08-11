@@ -15,8 +15,9 @@ function App() {
     factoryContract: {_address: "Connect a factory contract"},
     cominterContract: {_address: "Connect a cominter contract"},
     cominterTokenCount: "Connect a cominter contract",
-    cominterOwners: [],
+    cominterOwners: "Connect a cominter contract",
     cominterTurn: "Connect a cominter contract",
+    log: [],
     ipfsHashes: [],});
 
   // set references for text boxes
@@ -26,11 +27,27 @@ function App() {
   const nameSubmit = useRef()
   const descriptionSubmit = useRef()
 
+  function addToLog (...args) {
+    let msg = ""
+    for (let i = 0; i < args.length; i++) {
+      // create concatenated string of message
+      if(typeof args[i] === 'object' && args[i] !== null){ // check for object
+        msg = msg + JSON.stringify(args[i])
+      }
+      else{
+        msg = msg + args[i]
+      }
+    }
+    setValues(prevValues => {
+      return {...prevValues, log: [...prevValues.log, msg]}
+    })
+  }
+
   // used to process image for IPFS
   const captureFile = (event) => {
     event.preventDefault()
     const file = event.target.files[0]
-    console.log("Starting to process:", event.target.files[0])
+    addToLog("Starting to process file")
     const reader = new window.FileReader()
     reader.readAsArrayBuffer(file)
     reader.onloadend = () => {
@@ -38,21 +55,21 @@ function App() {
         return {...prevValues, buffer: Buffer(reader.result)}
       })
     }
-    console.log("Finished processing file")
+    addToLog("Finished processing file")
   }
  // used to send image to IPFS and submit to the cominter
  const onSubmit = async (event) => {
     event.preventDefault()
-    console.log("Current name: ", nameSubmit.current.value)
+    addToLog("Current name: ", nameSubmit.current.value)
     if(values.cominterTurn !== values.account){ // check if it is your turn to submit
-      console.log("It is not your turn")
+      addToLog("It is not your turn")
       return
     }
-    console.log("Submitting file to IPFS...")
+    addToLog("Submitting file to IPFS...")
     const result = await ipfs.add(values.buffer)
-    console.log("IPFS result of image", result)
+    addToLog("IPFS result of image", result)
 
-    console.log("Creating collectible")
+    addToLog("Creating collectible")
 
     const web3 = window.web3
     const cominterContract = values.cominterContract;
@@ -63,7 +80,7 @@ function App() {
     const image = imageURL
     const name = nameSubmit.current.value // get the name input
     const description = authorDescription + descriptionSubmit.current.value // get the description input
-    console.log("Description: ", description)
+    addToLog("Description: ", description)
 
     // create metadata JSON for IPFS
     const metadataJson = JSON.stringify({
@@ -72,12 +89,12 @@ function App() {
       "name": name,
     });
 
-    console.log("Submitting metadata to IPFS...")
+    addToLog("Submitting metadata to IPFS...")
     const metadataResult = await ipfs.add(metadataJson)
-    console.log("IPFS result of metadata: ", metadataResult)
+    addToLog("IPFS result of metadata: ", metadataResult)
 
     let metadataUri = "https://ipfs.io/ipfs/" + metadataResult.path
-    console.log(metadataUri)
+    addToLog(metadataUri)
 
     // create the collectible
     let newTokenTransaction = await cominterContract.methods.collaborativeMint(metadataUri).send(
@@ -90,7 +107,7 @@ function App() {
     const cominterTurnIndex = await cominterContract.methods.currentOwner().call()
     const cominterTurn = await cominterContract.methods.owners(cominterTurnIndex).call()
     const cominterTokenCount = await cominterContract.methods.tokenCounter().call()
-    console.log("Finished creating collectible")
+    addToLog("Finished creating collectible")
 
     setValues(prevValues => {
       return {...prevValues,
@@ -107,17 +124,17 @@ function App() {
     if(length !== 0){
       const hash = values.ipfsHashes[length-1]
       const path = "https://ipfs.io/ipfs/" + hash // get IPFS URL
-      console.log("The IPFS path to the image is: ", path)
+      addToLog("The IPFS path to the image is: ", path)
 
       // create element and add to DOM with IPFS URL as image source
       const image = document.createElement("img")
       image.src = path
       document.body.appendChild(image)
 
-      console.log("Displaying latest IPFS.")
+      addToLog("Displaying latest IPFS.")
     }
     else{
-      console.log("No files uploaded to IPFS")
+      addToLog("No files uploaded to IPFS")
     }
   }
 
@@ -134,10 +151,17 @@ function App() {
           const cominterTurnIndex = await cominterContract.methods.currentOwner().call()
           const cominterTurn = await cominterContract.methods.owners(cominterTurnIndex).call()
           const cominterTokenCount = await cominterContract.methods.tokenCounter().call()
+          const cominterNumberOfOwners = await cominterContract.methods.numberOfOwners().call()
+          let cominterOwners = []
+          for (let i = 0; i < cominterNumberOfOwners; i++) {
+            let indexOwner = await cominterContract.methods.owners(i).call()
+            cominterOwners.push(indexOwner)
+            cominterOwners.push(" ")
+          }
 
           setValues(prevValues => {
             return {...prevValues, cominterContract: cominterContract, cominterTurn: cominterTurn,
-              cominterTokenCount: cominterTokenCount}
+              cominterTokenCount: cominterTokenCount, cominterOwners: cominterOwners}
           })
         }
         catch { // smart contract is not on network
@@ -187,7 +211,7 @@ function App() {
 
   const handleCreateCominter = async () => {
     if(values.factoryContract._address === "Connect a factory contract"){
-      console.log("add factory contract")
+      addToLog("Add a factory contract")
       return
     }
 
@@ -197,7 +221,7 @@ function App() {
       _owners = JSON.parse(createCominterRef.current.value)
     }
     catch{
-      console.log("provide valid input")
+      addToLog("Provide valid input for 'Create Cominter'")
       return
     }
 
@@ -219,17 +243,25 @@ function App() {
     const cominterTurnIndex = await cominterContract.methods.currentOwner().call()
     const cominterTurn = await cominterContract.methods.owners(cominterTurnIndex).call()
     const cominterTokenCount = await cominterContract.methods.tokenCounter().call()
+    const cominterNumberOfOwners = await cominterContract.methods.numberOfOwners().call()
+
+    let cominterOwners = []
+    for (let i = 0; i < cominterNumberOfOwners; i++) {
+      let indexOwner = await cominterContract.methods.owners(i).call()
+      cominterOwners.push(indexOwner)
+      cominterOwners.push(" ")
+    }
 
     setValues(prevValues => {
       return {...prevValues, cominterContract: cominterContract, cominterTurn: cominterTurn,
-        cominterTokenCount: cominterTokenCount}
+        cominterTokenCount: cominterTokenCount, cominterOwners: cominterOwners}
     })
 
   }
 
   const handleLoadCominter = async () => {
     if(values.cominterContract._address === "Connect a cominter contract"){
-      console.log("Create a cominter first!")
+      addToLog("Create a cominter first!")
       return
     }
 
@@ -239,10 +271,10 @@ function App() {
 
     const numTurns = values.cocominterTokenCount
     let paths = []
-    console.log("Beginning to display tokenURIs")
+    addToLog("Beginning to display tokenURIs")
     for (let i = 0; i < numTurns; i++){ // iterate through the deployed NFTs of the minter
       let uri = await cominterContract.methods.tokenURI(i).call()
-      console.log(uri) // IPFS link to the metadata
+      addToLog(uri) // IPFS link to the metadata
       $.getJSON(uri, function(data){
         if(data !== null){
           let imageUrl = data.image
@@ -254,7 +286,7 @@ function App() {
           let img = document.createElement("img");
           img.src = imageUrl;
           document.body.appendChild(img);
-          console.log(imageUrl)
+          addToLog(imageUrl)
         }
       })
 
@@ -293,7 +325,7 @@ function App() {
         //   const abi = CollaborativeMinterFactory.abi
         //   const address = networkData.address
         //   const factoryContract = new web3.eth.Contract(abi, address)
-        //   console.log(factoryContract)
+        //   addToLog(factoryContract)
         //   setValues(prevValues => {
         //     return {...prevValues, factoryContract: factoryContract}
         //   })
@@ -322,6 +354,7 @@ function App() {
           <b> Cominter address: </b> {values.cominterContract._address}
           <b> Cominter token count: </b> {values.cocominterTokenCount}
           <b> Cominter turn: </b> {values.cominterTurn}
+          <b> Cominter owners: </b> {values.cominterOwners}
         </p>
         <p>
           <b> Loaded picture: </b> {values.buffer}
@@ -351,7 +384,11 @@ function App() {
           <input type='text' placeholder='description of your work' ref={descriptionSubmit}/>
           <input type='submit' value='Submit your turn'/>
         </form>
-        // <button style={{ margin: 10 }} onClick={displayLatestIPFS}> Display latest from IPFS </button>
+         {/* <button style={{ margin: 10 }} onClick={displayLatestIPFS}> Display latest from IPFS </button> */}
+      </div>
+
+      <div>
+        <b> Message Log </b> <br/> {values.log}
       </div>
     </>
   );
