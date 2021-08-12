@@ -13,6 +13,7 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 7. Dapp University's tutorial "How to Build Ethereum Dapp With IPFS - Blockchain Programming Tutorial"
 8. Dapp University's tutorial "2. Deploy Smart Contracts - Geth, Rinkeby & Truffle Tutorial"
 9. PatrickAlphaC's ETH Brownie nft-mix
+10. Solidity documentation's Simple Open Auction example
 
 ## References
 1. https://github.com/t4sk/solidity-multi-sig-wallet/blob/master/contracts/MultiSigWallet.sol
@@ -24,3 +25,4 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 7. https://www.youtube.com/watch?v=pTZVoqBUjvI&ab_channel=DappUniversity
 8. https://www.youtube.com/watch?v=_rumMSlrmiI&ab_channel=DappUniversity
 9. https://github.com/PatrickAlphaC/nft-mix
+10. https://docs.soliditylang.org/en/v0.8.7/solidity-by-example.html#simple-open-auction
