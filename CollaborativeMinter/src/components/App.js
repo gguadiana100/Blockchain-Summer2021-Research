@@ -39,7 +39,7 @@ function App() {
       }
     }
     setValues(prevValues => {
-      return {...prevValues, log: [...prevValues.log, msg]}
+      return {...prevValues, log: [...prevValues.log, msg, <br />]}
     })
   }
 
