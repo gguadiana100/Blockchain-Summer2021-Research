@@ -18,7 +18,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     struct SalesTransaction {
       address from; // buyer
       address to; // recipient of token
-      uint256 tokenId; // token for sale
+      uint256[] tokenIds; // tokens for sale
       uint256 value; // price for token
       bool executed;
       mapping(address => bool) isConfirmed; // check if confirmed by owners
@@ -68,7 +68,14 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       _;
     }
 
-    // NFT minting function where only the current owner can mint
+    modifier ownedByContract(uint256[] _tokenIds) { // check if token IDs are valid and are owned by contract
+      for(uint256 i = 0; i < _tokenIds.length; i++){
+        require(_tokenIds[i] < tokenCounter, "invalid token ID");
+        require(address(this) == _owners(_tokenIds[i]),"token not owned by contract");
+      }
+    }
+
+    // NFT minting function where only the current owner can mint. Smart contract holds NFTs upon minting
     function collaborativeMint(string memory _tokenURI) public onlyCurrentOwner returns (uint256) {
         uint256 newItemId = tokenCounter;
         _safeMint(address(this), newItemId); // the owner of the NFT is this smart contract
@@ -80,11 +87,37 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         return newItemId;
     }
 
-    function submitSalesTransaction() public returns (uint256) { // buyer sends sales transaction
-      return 0;
+    receive() payable external {
+      
     }
 
-    function approveSalesTransaction(uint256 _txIndex) onlyOwner public returns (bool) { // owner approves sales transaction
+    function submitSalesTransaction(address memory _to, uint256[] memory _tokenIds)
+      payable ownedByContract(_tokenIds) public returns (uint256)
+    { // buyer sends sales transaction, returns transaction index
+      uint256 txIndex = salesTransactions.length;
+
+      salesTransactions.push(SalesTransaction({
+        from: msg.sender;
+        to: _to;
+        tokenIds: _tokenIds;
+        value: msg.value;
+        executed: false;
+        numConfirmations: 0;
+      }));
+
+      return txIndex;
+    }
+
+    function approveSalesTransaction(uint256 _txIndex) onlyOwner
+      salesTransactionExists(_txIndex)
+      salesTransactionNotExecuted(_txIndex)
+      salesTransactionNotConfirmed(_txIndex)
+      public returns (bool)
+    { // owner approves sales transaction
+
+      // update confirmations and number of confimrations
+      salesTransactions[_txIndex].isConfirmed[msg.sender] = true;
+      salesTransactions[_txIndex].numConfirmations += 1;
 
       if(salesTransactions[_txIndex].numConfirmations == numberOfOwners){ // execute if approved by all owners
         executeSalesTransaction(_txIndex);
@@ -92,24 +125,41 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       return true;
     }
 
-    function denySalesTransaction(uint256 _txIndex) onlyOwner public returns (bool) {
-      return true;
-    }
-
-    function revokeSalesTransaction(uint256 _txIndex) public returns (bool) {
+    function denySalesTransaction(uint256 _txIndex) onlyOwner
+      salesTransactionExists(_txIndex)
+      salesTransactionNotExecuted(_txIndex)
+      public returns (bool)
+    {
+      salesTransactions[_txIndex].isConfirmed[msg.sender] = false;
       return true;
     }
 
     function executeSalesTransaction(uint _txIndex) private returns (bool) {
+      uint256[] tokens = salesTransactions[_txIndex].tokenIds
+
+      // send ETH to each owner
+      uint256 amountToPay = salesTransactions[_txIndex] % numberOfOwners;
+      bool success;
+      for(uint256 i = 0; i < numberOfOwners; i++){
+        (success, ) = msg.sender.call.value(amountToPay)("");
+        require(success, "Transfer failed.");
+      }
+
+      // send each NFT from this smart contract to new owner
+      for(uint256 i = 0; i < tokens.length; i++){
+        _safeTransfer(address(this), salesTransactions[_txIndex].to, tokens[i])
+      }
+
+      salesTransactions[_txIndex].executed = true;
       return true;
     }
 
     function getSalesTransaction(uint256 _txIndex) public view returns (SalesTransaction) {
-      return salesTransactions[0];
+      return salesTransactions[_txIndex];
     }
 
     function isConfirmed(uint256 _txIndex, address _owner) public view returns (bool) {
-      return true;
+      return salesTransactions[_txIndex].isConfirmed[_owner];
     }
 
 }
