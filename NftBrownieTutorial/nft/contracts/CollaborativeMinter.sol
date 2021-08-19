@@ -11,6 +11,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     uint256 public tokenCounter;
     uint256 public currentOwner; // define whose turn it is at the current time with owners index\
     uint256 public numberOfOwners;
+    bool public isMerged; // defines whether we have a composite NFT
     address[] public owners; // keep track of all owners of the NFT
     mapping(address => bool) public isOwner; // used to check if someone is an owner
     mapping(uint256 => bool) public secondarySale; // used to check if the token sale is a secondary sale
@@ -32,6 +33,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       tokenCounter = 0;
       numberOfOwners = _owners.length;
       currentOwner = 0; // define the first owner to have an active turn
+      isMerged = false;
       for(uint256 i = 0; i < _owners.length; i++){ // define the owners
         owners.push(_owners[i]);
         isOwner[_owners[i]] = true;
@@ -75,8 +77,22 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       }
     }
 
+    modifier allOwnedByContract() { // check if all NFTs are owned by the contract
+      for(uint256 i = 0; i < tokenCounter; i++){
+        require(address(this) == _owners(i),"not all tokens owned by contract");
+      }
+    }
+
+    modifier isNotMerged() { // check if we have a composite NFT
+      require(!isMerged, "NFT is a completed composite");
+    }
+
+    modifier hasBeenMinted(){ // check if an NFT has been minted
+      require(tokenCounter > 0, "no NFTs have been minted");
+    }
+
     // NFT minting function where only the current owner can mint. Smart contract holds NFTs upon minting
-    function collaborativeMint(string memory _tokenURI) public onlyCurrentOwner returns (uint256) {
+    function collaborativeMint(string memory _tokenURI) public onlyCurrentOwner isNotMerged returns (uint256) {
         uint256 newItemId = tokenCounter;
         _safeMint(address(this), newItemId); // the owner of the NFT is this smart contract
         _setTokenURI(newItemId, _tokenURI);
@@ -87,9 +103,41 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         return newItemId;
     }
 
+    // NFT minting function where only the current owner can mint. Smart contract holds NFTs upon minting
+    function _collaborativeMint(string memory _tokenURI) private returns (uint256) {
+        uint256 newItemId = tokenCounter;
+        _safeMint(address(this), newItemId); // the owner of the NFT is this smart contract
+        _setTokenURI(newItemId, _tokenURI);
+        secondarySale[tokenCounter] = false; // the first token sale is not a secondary sale
+        tokenCounter = tokenCounter + 1;
+        return newItemId;
+    }
+
+    // merge all collaborative mints and create a composite NFT
+    function mergeCollaborativeMint(string memory _tokenURI) public isOwner
+      hasBeenMinted
+      isNotMerged
+      allOwnedByContract
+      returns (bool)
+    {
+      isMerged = true;
+
+      // burn all collaborative mints
+      for(uint256 i = 0; i < tokenCounter; i++) {
+        _burn(i);
+      }
+      
+      // create a composite NFT
+      _collaborativeMint(_tokenURI);
+
+      return true;
+    }
+
     receive() payable external {
 
     }
+
+
 
     function submitSalesTransaction(address memory _to, uint256[] memory _tokenIds)
       payable ownedByContract(_tokenIds) public returns (uint256)
