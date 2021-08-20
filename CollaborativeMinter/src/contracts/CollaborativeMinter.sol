@@ -29,7 +29,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
 
     SalesTransaction[] public salesTransactions;
 
-    constructor (address[] memory _owners) public ERC721 ("Collaborative Mint", "COMINT"){
+    constructor (address[] memory _owners) ERC721 ("Collaborative Mint", "COMINT"){
       require(_owners.length > 0, "owners required");
       tokenCounter = 0;
       numberOfOwners = _owners.length;
@@ -76,17 +76,17 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       _;
     }
 
-    modifier ownedByContract(uint256[] _tokenIds) { // check if token IDs are valid and are owned by contract
+    modifier ownedByContract(uint256[] memory _tokenIds) { // check if token IDs are valid and are owned by contract
       for(uint256 i = 0; i < _tokenIds.length; i++){
         require(_tokenIds[i] < tokenCounter, "invalid token ID");
-        require(address(this) == _owners(_tokenIds[i]),"token not owned by contract");
+        require(_isApprovedOrOwner(address(this),_tokenIds[i]),"token not owned by contract");
       }
       _;
     }
 
     modifier allOwnedByContract() { // check if all NFTs are owned by the contract
       for(uint256 i = 0; i < tokenCounter; i++){
-        require(address(this) == _owners(i),"not all tokens owned by contract");
+        require(_isApprovedOrOwner(address(this),i),"not all tokens owned by contract");
       }
       _;
     }
@@ -122,7 +122,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     }
 
     // merge all collaborative mints and create a composite NFT
-    function mergeCollaborativeMint(string memory _tokenURI) public isOwner
+    function mergeCollaborativeMint(string memory _tokenURI) public onlyOwner
       hasBeenMinted
       isNotMerged
       allOwnedByContract
@@ -144,39 +144,43 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
 
     }
 
-    function submitSalesTransaction(address memory _to, uint256[] memory _tokenIds)
+    function submitSalesTransaction(address _to, uint256[] memory _tokenIds)
       payable ownedByContract(_tokenIds) public returns (uint256)
     { // buyer sends sales transaction, returns transaction index
       uint256 txIndex = salesTransactions.length;
+      mapping(address => bool) isConfirmed;
 
       salesTransactions.push(SalesTransaction({
-        from: msg.sender;
-        to: _to;
-        tokenIds: _tokenIds;
-        value: msg.value;
-        secondarySale: false;
-        revoked: false;
-        executed: false;
-        numConfirmations: 0;
+        from: msg.sender,
+        to: _to,
+        tokenIds: _tokenIds,
+        value: msg.value,
+        secondarySale: false,
+        revoked: false,
+        executed: false,
+        isConfirmed: isConfirmed,
+        numConfirmations: 0
       }));
 
       return txIndex;
     }
 
-    function submitSecondarySalesTransaction(address memory _to, uint256[] memory _tokenIds, uint256 _value)
+    function submitSecondarySalesTransaction(address _to, uint256[] memory _tokenIds, uint256 _value)
       public returns (uint256)
     { // buyer sends sales transaction, returns transaction index
       uint256 txIndex = salesTransactions.length;
+      mapping(address => bool) isConfirmed;
 
       salesTransactions.push(SalesTransaction({
-        from: msg.sender;
-        to: _to;
-        tokenIds: _tokenIds;
-        value: _value;
-        secondarySale: true;
-        revoked: false;
-        executed: false;
-        numConfirmations: 0;
+        from: msg.sender,
+        to: _to,
+        tokenIds: _tokenIds,
+        value: _value,
+        secondarySale: true,
+        revoked: false,
+        executed: false,
+        isConfirmed: isConfirmed,
+        numConfirmations: 0
       }));
 
       return txIndex;
@@ -206,19 +210,20 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       public returns (bool)
     { // owner denies sales transaction
       // update confirmations and number of confirmations
-      require(salesTransactions[_txIndex].isConfirmed[msg.sender], "sales transaction not approved by owner")
+      require(salesTransactions[_txIndex].isConfirmed[msg.sender], "sales transaction not approved by owner");
       salesTransactions[_txIndex].isConfirmed[msg.sender] = false;
       salesTransactions[_txIndex].numConfirmations -= 1;
       return true;
     }
 
     // sender revoke sales transaction to get ETH back
-    function revokeSalesTransaction(uint256 _txIndex) public returns (bool)
+    function revokeSalesTransaction(uint256 _txIndex) public
       salesTransactionExists(_txIndex)
       salesTransactionNotExecuted(_txIndex)
       salesTransactionNotRevoked(_txIndex)
+      returns (bool)
     {
-      require(salesTransactions[_txIndex].from == msg.owner, "must be account that submitted sales transaction")
+      require(salesTransactions[_txIndex].from == msg.owner, "must be account that submitted sales transaction");
       uint256 amountToPay = salesTransactions[_txIndex].value;
       bool success;
       (success, ) = salesTransactions[_txIndex].from.call.value(amountToPay)("");
@@ -228,7 +233,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     }
 
     function executeSalesTransaction(uint _txIndex) private returns (bool) {
-      uint256[] tokens = salesTransactions[_txIndex].tokenIds
+      uint256[] memory tokens = salesTransactions[_txIndex].tokenIds;
 
       if(salesTransactions[_txIndex].secondarySale == false) { // initial sale
         // send ETH to each owner
@@ -254,7 +259,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
 
       // send each NFT from this smart contract to the new owner
       for(uint256 i = 0; i < tokens.length; i++){
-        _safeTransfer(address(this), salesTransactions[_txIndex].to, tokens[i])
+        _safeTransfer(address(this), salesTransactions[_txIndex].to, tokens[i]);
       }
 
       salesTransactions[_txIndex].executed = true;
@@ -301,7 +306,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         executeSalesTransaction(secondarySaleId);
     }
 
-    function getSalesTransaction(uint256 _txIndex) public view returns (SalesTransaction) {
+    function getSalesTransaction(uint256 _txIndex) public view returns (SalesTransaction memory) {
       return salesTransactions[_txIndex];
     }
 

@@ -138,6 +138,7 @@ function App() {
     }
   }
 
+  // find cominter with address
   const handleFindCominter = () => {
     const minterAddress = findCominterRef.current.value
     if(parseInt(minterAddress)) { // check if we have a number
@@ -179,6 +180,7 @@ function App() {
     }
   }
 
+  // find factory with address
   const handleFindFactory = () => {
     const factoryAddress = findFactoryRef.current.value
     if(parseInt(factoryAddress)) { // check if we have a number
@@ -209,6 +211,7 @@ function App() {
     }
   }
 
+  // create cominter from list of owners
   const handleCreateCominter = async () => {
     if(values.factoryContract._address === "Connect a factory contract"){
       addToLog("Add a factory contract")
@@ -259,6 +262,7 @@ function App() {
 
   }
 
+  // get information about cominter
   const handleLoadCominter = async () => {
     if(values.cominterContract._address === "Connect a cominter contract"){
       addToLog("Create a cominter first!")
@@ -289,11 +293,7 @@ function App() {
           addToLog(imageUrl)
         }
       })
-
-
-
     }
-
   }
 
   useEffect(() => { // do once at startup
@@ -310,29 +310,13 @@ function App() {
           window.alert('Non-Ethereum browser detected. Try using MetaMask.')
         }
       }
-      async function loadBlockchainData (){
+      async function loadBlockchainData (){ // get ETH account
         const web3 = window.web3
         // load account
         const accounts = await web3.eth.getAccounts()
         setValues(prevValues => {
           return {...prevValues, account: accounts[0]}
         })
-        // get info from CollaborativeMinterFactory JSON
-        // const networkId = await web3.eth.net.getId()
-        // const networkData = CollaborativeMinterFactory.networks[networkId]
-        //
-        // if(networkData){
-        //   const abi = CollaborativeMinterFactory.abi
-        //   const address = networkData.address
-        //   const factoryContract = new web3.eth.Contract(abi, address)
-        //   addToLog(factoryContract)
-        //   setValues(prevValues => {
-        //     return {...prevValues, factoryContract: factoryContract}
-        //   })
-        // }
-        // else {
-        //   window.alert('The smart contract is not deployed on this network')
-        // }
       }
       await loadWeb3()
       await loadBlockchainData()
