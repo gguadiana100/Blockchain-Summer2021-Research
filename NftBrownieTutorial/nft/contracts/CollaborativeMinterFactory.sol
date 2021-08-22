@@ -8,7 +8,7 @@ contract CollaborativeMinterFactory {
   address[] public collaborativeMinters; // holds all of the addresses of the collaborative minter deployments
   mapping(address => uint[]) public accountToCominters; // holds arrays of collaborative minter index
 
-  constructor() public{}
+  constructor() {}
 
   function createCollaborativeMinter(address[] memory _owners) public returns (address) {
     CollaborativeMinter newCollaborativeMinter = new CollaborativeMinter(_owners);

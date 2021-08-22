@@ -15,6 +15,8 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     address[] public owners; // keep track of all owners of the NFT
     mapping(address => bool) public isOwner; // used to check if someone is an owner
 
+    uint256 internal latestReceived; // used to get the msg.value for secondary sales
+
     struct SalesTransaction {
       address from; // buyer
       address to; // recipient of token
@@ -23,11 +25,12 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       bool secondarySale; // check if we have a secondary sale
       bool revoked;
       bool executed;
-      mapping(address => bool) isConfirmed; // check if confirmed by owners
       uint256 numConfirmations;
     }
 
     SalesTransaction[] public salesTransactions;
+
+    mapping(uint => mapping(address => bool)) isConfirmed; // check if a transaction is confirmed by an owner
 
     constructor (address[] memory _owners) ERC721 ("Collaborative Mint", "COMINT"){
       require(_owners.length > 0, "owners required");
@@ -62,7 +65,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     }
 
     modifier salesTransactionNotConfirmed(uint256 _txIndex) { // restrict only to transactions that are not confirmed by caller
-      require(!salesTransactions[_txIndex].isConfirmed[msg.sender], "sales transaction is already confirmed");
+      require(!isConfirmed[_txIndex][msg.sender], "sales transaction is already confirmed");
       _;
     }
 
@@ -141,14 +144,13 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     }
 
     receive() external payable {
-
+      latestReceived = msg.value;
     }
 
     function submitSalesTransaction(address _to, uint256[] memory _tokenIds)
       payable ownedByContract(_tokenIds) public returns (uint256)
     { // buyer sends sales transaction, returns transaction index
       uint256 txIndex = salesTransactions.length;
-      mapping(address => bool) isConfirmed;
 
       salesTransactions.push(SalesTransaction({
         from: msg.sender,
@@ -158,7 +160,6 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         secondarySale: false,
         revoked: false,
         executed: false,
-        isConfirmed: isConfirmed,
         numConfirmations: 0
       }));
 
@@ -169,7 +170,6 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       public returns (uint256)
     { // buyer sends sales transaction, returns transaction index
       uint256 txIndex = salesTransactions.length;
-      mapping(address => bool) isConfirmed;
 
       salesTransactions.push(SalesTransaction({
         from: msg.sender,
@@ -179,7 +179,6 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         secondarySale: true,
         revoked: false,
         executed: false,
-        isConfirmed: isConfirmed,
         numConfirmations: 0
       }));
 
@@ -194,7 +193,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       public returns (bool)
     { // owner approves sales transaction
       // update confirmations and number of confirmations
-      salesTransactions[_txIndex].isConfirmed[msg.sender] = true;
+      isConfirmed[_txIndex][msg.sender] = true;
       salesTransactions[_txIndex].numConfirmations += 1;
 
       if(salesTransactions[_txIndex].numConfirmations == numberOfOwners){ // execute if approved by all owners
@@ -210,8 +209,8 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       public returns (bool)
     { // owner denies sales transaction
       // update confirmations and number of confirmations
-      require(salesTransactions[_txIndex].isConfirmed[msg.sender], "sales transaction not approved by owner");
-      salesTransactions[_txIndex].isConfirmed[msg.sender] = false;
+      require(isConfirmed[_txIndex][msg.sender], "sales transaction not approved by owner");
+      isConfirmed[_txIndex][msg.sender] = false;
       salesTransactions[_txIndex].numConfirmations -= 1;
       return true;
     }
@@ -223,10 +222,10 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       salesTransactionNotRevoked(_txIndex)
       returns (bool)
     {
-      require(salesTransactions[_txIndex].from == msg.owner, "must be account that submitted sales transaction");
+      require(salesTransactions[_txIndex].from == msg.sender, "must be account that submitted sales transaction");
       uint256 amountToPay = salesTransactions[_txIndex].value;
       bool success;
-      (success, ) = salesTransactions[_txIndex].from.call.value(amountToPay)("");
+      (success, ) = salesTransactions[_txIndex].from.call{value: amountToPay}("");
       require(success, "Transfer failed.");
       salesTransactions[_txIndex].revoked = true;
       return true;
@@ -241,7 +240,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         bool success;
         // pay each owner
         for(uint256 i = 0; i < numberOfOwners; i++){
-          (success, ) = owners[i].call.value(amountToPay)("");
+          (success, ) = owners[i].call{value:amountToPay}("");
           require(success, "Transfer failed.");
         }
       }
@@ -252,14 +251,14 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         bool success;
         // pay each owner
         for(uint256 i = 0; i < numberOfOwners; i++){
-          (success, ) = owners[i].call.value(amountToPay)("");
+          (success, ) = owners[i].call{value:amountToPay}("");
           require(success, "Transfer failed.");
         }
       }
 
       // send each NFT from this smart contract to the new owner
       for(uint256 i = 0; i < tokens.length; i++){
-        _safeTransfer(address(this), salesTransactions[_txIndex].to, tokens[i]);
+        _safeTransfer(address(this), salesTransactions[_txIndex].to, tokens[i], "");
       }
 
       salesTransactions[_txIndex].executed = true;
@@ -274,8 +273,10 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     ) public virtual override {
       require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
       // create a secondary sales transaction, send NFT to contract, execute secondary sale
-      uint256 secondarySaleId = submitSecondarySalesTransaction(to, [tokenId], msg.value);
-      safeTransferFrom(from, address(this), tokenId, "");
+      uint256[] memory tokenIdArray = new uint256[](1);
+      tokenIdArray[0] = tokenId;
+      uint256 secondarySaleId = submitSecondarySalesTransaction(to, tokenIdArray, latestReceived);
+      _safeTransfer(from, address(this), tokenId, "");
       executeSalesTransaction(secondarySaleId);
     }
 
@@ -288,8 +289,10 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         // create a secondary sales transaction, send NFT to contract, execute secondary sale
-        uint256 secondarySaleId = submitSecondarySalesTransaction(to, [tokenId], msg.value);
-        safeTransferFrom(from, address(this), tokenId, "");
+        uint256[] memory tokenIdArray = new uint256[](1);
+        tokenIdArray[0] = tokenId;
+        uint256 secondarySaleId = submitSecondarySalesTransaction(to, tokenIdArray, latestReceived);
+        _safeTransfer(from, address(this), tokenId, _data);
         executeSalesTransaction(secondarySaleId);
     }
 
@@ -299,19 +302,16 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
         address to,
         uint256 tokenId
     ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         // create a secondary sales transaction, send NFT to contract, execute secondary sale
-        uint256 secondarySaleId = submitSecondarySalesTransaction(to, [tokenId], msg.value);
-        safeTransferFrom(from, address(this), tokenId, "");
+        uint256[] memory tokenIdArray = new uint256[](1);
+        tokenIdArray[0] = tokenId;
+        uint256 secondarySaleId = submitSecondarySalesTransaction(to, tokenIdArray, latestReceived);
+        _transfer(from, address(this), tokenId);
         executeSalesTransaction(secondarySaleId);
     }
 
     function getSalesTransaction(uint256 _txIndex) public view returns (SalesTransaction memory) {
       return salesTransactions[_txIndex];
-    }
-
-    function isConfirmed(uint256 _txIndex, address _owner) public view returns (bool) {
-      return salesTransactions[_txIndex].isConfirmed[_owner];
     }
 
 }
