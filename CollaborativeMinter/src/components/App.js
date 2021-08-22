@@ -18,7 +18,9 @@ function App() {
     cominterOwners: "Connect a cominter contract",
     cominterTurn: "Connect a cominter contract",
     log: [],
-    ipfsHashes: [],});
+    ipfsHashes: [],
+    salesTransactions: [],
+  });
 
   // set references for text boxes
   const findCominterRef = useRef()
@@ -26,6 +28,11 @@ function App() {
   const findFactoryRef = useRef()
   const nameSubmit = useRef()
   const descriptionSubmit = useRef()
+  const salesTransactionSubmit = useRef()
+  const toCreateTransaction = useRef()
+  const tokenIdsCreateTransaction = useRef()
+  const toTransfer = useRef()
+  const tokenIdTransfer = useRef()
 
   function addToLog (...args) {
     let msg = ""
@@ -58,7 +65,7 @@ function App() {
     addToLog("Finished processing file")
   }
  // used to send image to IPFS and submit to the cominter
- const onSubmit = async (event) => {
+ const onFileSubmit = async (event) => {
     event.preventDefault()
     addToLog("Current name: ", nameSubmit.current.value)
     if(values.cominterTurn !== values.account){ // check if it is your turn to submit
@@ -296,6 +303,42 @@ function App() {
     }
   }
 
+  const handleMerge = async () => {
+
+  }
+
+  const onTransactionSubmit = async (event) => {
+     event.preventDefault()
+     switch (document.getElementById("salesTransactionMode").text){
+       case "Confirm Transaction":
+        confirmTransaction();
+       case "Deny Transaction":
+        denyTransaction();
+       case "Revoke Transaction":
+        revokeTransaction();
+     }
+   }
+
+  const confirmTransaction = async () => {
+
+  }
+
+  const denyTransaction = async () => {
+
+  }
+
+  const revokeTransaction = async () => {
+
+  }
+
+  const onCreateTransaction = async (event) => {
+    event.preventDefault()
+  }
+
+  const onTransfer = async (event) => {
+    event.preventDefault()
+  }
+
   useEffect(() => { // do once at startup
     async function startup(){
       async function loadWeb3(){ // connect to MetaMask or other Ethereum provider
@@ -351,7 +394,8 @@ function App() {
         <input type="text" placeholder='cominter address' ref={findCominterRef}/>
         <button onClick={handleFindFactory}> Find factory with address</button>
         <input type="text" placeholder='factory address' ref={findFactoryRef}/>
-        <div style={{ margin: 10 }}>
+        <div>
+          <br/>
           <button onClick={handleCreateCominter}> Create Cominter </button>
           <input type="text" placeholder='["owner0Address",...]' ref={createCominterRef}/>
           <button onClick={handleLoadCominter}> Load Cominter </button>
@@ -362,16 +406,50 @@ function App() {
         <p>
           <b> Submit to the cominter </b>
         </p>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onFileSubmit}>
           <input type='file' onChange={captureFile} />
           <input type='text' placeholder='name of your work' ref={nameSubmit}/>
           <input type='text' placeholder='description of your work' ref={descriptionSubmit}/>
           <input type='submit' value='Submit your turn'/>
         </form>
          {/* <button style={{ margin: 10 }} onClick={displayLatestIPFS}> Display latest from IPFS </button> */}
+         <br/>
+         <button onClick={handleMerge}> Merge Collaborative Mint</button>
       </div>
 
       <div>
+        <p>
+          <b> Manage Cominter Transactions </b>  <br/> {values.salesTransactions}
+        </p>
+        <form onSubmit= {onTransactionSubmit}>
+          <select id="salesTransactionMode">
+            <option> Confirm Transaction </option>
+            <option> Deny Transaction </option>
+            <option> Revoke Transaction </option>
+          </select>
+          <input type='text' placeholder='Transaction ID' ref={salesTransactionSubmit}/>
+          <input type='submit' value='Submit'/>
+        </form>
+        <p>
+          <b> Create Transaction </b>
+        </p>
+        <form onSubmit= {onCreateTransaction}>
+          <input type='text' placeholder='recipient address' ref={toCreateTransaction}/>
+          <input type='text' placeholder='[tokenID1,...]' ref={tokenIdsCreateTransaction}/>
+          <input type='submit' value='Submit'/>
+        </form>
+        <p>
+          <b> Transfer Asset </b>
+        </p>
+        <form onSubmit= {onTransfer}>
+          <input type='text' placeholder='recipient address' ref={toTransfer}/>
+          <input type='text' placeholder='token ID' ref={tokenIdTransfer}/>
+          <input type='submit' value='Submit'/>
+        </form>
+      </div>
+
+      <div>
+        <br/>
         <b> Message Log </b> <br/> {values.log}
       </div>
     </>
