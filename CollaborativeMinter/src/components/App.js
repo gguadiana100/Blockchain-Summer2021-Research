@@ -280,7 +280,7 @@ function App() {
     const factoryContract = values.factoryContract;
     const cominterContract = values.cominterContract
 
-    const numTurns = values.cocominterTokenCount
+    const numTurns = values.cominterTokenCount
     let paths = []
     addToLog("Beginning to display tokenURIs")
     for (let i = 0; i < numTurns; i++){ // iterate through the deployed NFTs of the minter
@@ -379,7 +379,7 @@ function App() {
 
         <p>
           <b> Cominter address: </b> {values.cominterContract._address}
-          <b> Cominter token count: </b> {values.cocominterTokenCount}
+          <b> Cominter token count: </b> {values.cominterTokenCount}
           <b> Cominter turn: </b> {values.cominterTurn}
           <b> Cominter owners: </b> {values.cominterOwners}
         </p>
