@@ -15,6 +15,8 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 9. PatrickAlphaC's ETH Brownie nft-mix
 10. Solidity documentation's Simple Open Auction example
 11. Solidity by Example's Multi-Sig Wallet
+12. Bernard Peh's tutorial "Calling the Function of Another Contract in Solidity"
+13. EatTheBlock's tutorial "Solidity Tutorial: Library"
 
 ## References
 1. https://github.com/t4sk/solidity-multi-sig-wallet/blob/master/contracts/MultiSigWallet.sol
@@ -28,3 +30,5 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 9. https://github.com/PatrickAlphaC/nft-mix
 10. https://docs.soliditylang.org/en/v0.8.7/solidity-by-example.html#simple-open-auction
 11. https://solidity-by-example.org/app/multi-sig-wallet/
+12. https://medium.com/@blockchain101/calling-the-function-of-another-contract-in-solidity-f9edfa921f4c
+13. https://www.youtube.com/watch?v=25MLAnIzXRw&ab_channel=EatTheBlocks

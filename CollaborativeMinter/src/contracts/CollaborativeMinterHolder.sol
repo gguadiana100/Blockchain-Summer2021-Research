@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ERC721URIStorage allows you to set tokenURI after minting
-// ERC721Holder ensures that a smart contract can hold NFTs
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-
 library CollaborativeMinterHolder {
+    address public collaborativeMinter; // address of parent collaborative minter
+    uint256 public latestReceived; // used to get the msg.value for secondary sales
 
     struct SalesTransaction {
       address from; // buyer
@@ -17,6 +14,15 @@ library CollaborativeMinterHolder {
       bool revoked;
       bool executed;
       uint256 numConfirmations;
+    }
+
+    SalesTransaction[] public salesTransactions;
+
+    mapping(uint => mapping(address => bool)) isConfirmed; // check if a transaction is confirmed by an owner
+
+    constructor (address _collaborativeMinter) {
+      collaborativeMinter = _collaborativeMinter;
+      latestReceived = 0;
     }
 
     modifier onlyOwner { // restrict to only owners
@@ -195,162 +201,4 @@ library CollaborativeMinterHolder {
     function getSalesTransaction(uint256 _txIndex) public view returns (SalesTransaction memory) {
       return salesTransactions[_txIndex];
     }
-}
-
-// NFT Smart Contract Constructor
-contract CollaborativeMinter is ERC721URIStorage {
-    uint256 public tokenCounter;
-    uint256 public currentOwner; // define whose turn it is at the current time with owners index\
-    uint256 public numberOfOwners;
-    bool public isMerged; // defines whether we have a composite NFT
-    address[] public owners; // keep track of all owners of the NFT
-    mapping(address => bool) public isOwner; // used to check if someone is an owner
-    address public collaborativeMinterHolder; // holder of NFTs and submitted transactions
-
-    uint256 public latestReceived; // used to get the msg.value for secondary sales
-
-    using CollaborativeMinterHolder for CollaborativeMinterHolder.SalesTransaction;
-    CollaborativeMinterHolder.SalesTransaction[] public salesTransactions;
-
-    mapping(uint => mapping(address => bool)) isConfirmed; // check if a transaction is confirmed by an owner
-
-    constructor (address[] memory _owners) ERC721 ("Collaborative Mint", "COMINT"){
-      require(_owners.length > 0, "owners required");
-      tokenCounter = 0;
-      numberOfOwners = _owners.length;
-      currentOwner = 0; // define the first owner to have an active turn
-      isMerged = false;
-      for(uint256 i = 0; i < _owners.length; i++){ // define the owners
-        owners.push(_owners[i]);
-        isOwner[_owners[i]] = true;
-      }
-      CollaborativeMinterHolder newCollaborativeMinterHolder = new CollaborativeMinterHolder(address(this));
-      collaborativeMinterHolder = address(newCollaborativeMinterHolder);
-    }
-
-    modifier onlyCurrentOwner { // restrict to only the active owner
-      require(msg.sender == owners[currentOwner], "not your turn");
-      _;
-    }
-
-    modifier onlyOwner { // restrict to only owners
-      require(isOwner[msg.sender],'not an owner');
-      _;
-    }
-
-    modifier isNotMerged() { // check if we have a composite NFT
-      require(!isMerged, "NFT is a completed composite");
-      _;
-    }
-
-    modifier hasBeenMinted(){ // check if an NFT has been minted
-      require(tokenCounter > 0, "no NFTs have been minted");
-      _;
-    }
-
-    modifier allOwnedByContract() { // check if all NFTs are owned by the contract
-      for(uint256 i = 0; i < tokenCounter; i++){
-        require(_isApprovedOrOwner(collaborativeMinterHolder,i),"not all tokens owned by contract");
-      }
-      _;
-    }
-
-    // NFT minting function where only the current owner can mint. Smart contract holds NFTs upon minting
-    function collaborativeMint(string memory _tokenURI) public onlyCurrentOwner isNotMerged returns (uint256) {
-      uint256 newItemId = tokenCounter;
-      _safeMint(collaborativeMinterHolder, newItemId); // the owner of the NFT is the holder smart contract
-      _setTokenURI(newItemId, _tokenURI);
-      tokenCounter = tokenCounter + 1;
-      uint256 nextOwnerId = (currentOwner + 1) % owners.length; // set up the next turn by getting the following ID
-      currentOwner = nextOwnerId; // update whose turn it is
-      return newItemId;
-    }
-
-    // NFT minting function where only the current owner can mint. Smart contract holds NFTs upon minting
-    function _collaborativeMint(string memory _tokenURI) private returns (uint256) {
-      uint256 newItemId = tokenCounter;
-      _safeMint(collaborativeMinterHolder, newItemId); // the owner of the NFT is the holder smart contract
-      _setTokenURI(newItemId, _tokenURI);
-      tokenCounter = tokenCounter + 1;
-      return newItemId;
-    }
-
-    // merge all collaborative mints and create a composite NFT
-    function mergeCollaborativeMint(string memory _tokenURI) public onlyOwner
-      hasBeenMinted
-      isNotMerged
-      allOwnedByContract
-      returns (bool)
-    {
-      isMerged = true;
-
-      // burn all collaborative mints
-      for(uint256 i = 0; i < tokenCounter; i++) {
-        _burn(i);
-      }
-
-      // create a composite NFT
-      _collaborativeMint(_tokenURI);
-      return true;
-    }
-
-    // Override safeTransferFrom to allow for royalties from secondary sales
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public virtual override {
-      require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
-      // create a secondary sales transaction, send NFT to contract, execute secondary sale
-      uint256[] memory tokenIdArray = new uint256[](1);
-      tokenIdArray[0] = tokenId;
-      CollaborativeMinterHolder cMH = CollaborativeMinterHolder(collaborativeMinterHolder);
-      uint256 secondarySaleId = cMH.submitSecondarySalesTransaction(to, tokenIdArray, cMH.latestReceived());
-      _safeTransfer(from, collaborativeMinterHolder, tokenId, "");
-      cMH.executeSalesTransaction(secondarySaleId);
-    }
-
-    // Override safeTransferFrom to allow for royalties from secondary sales
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
-        // create a secondary sales transaction, send NFT to contract, execute secondary sale
-        uint256[] memory tokenIdArray = new uint256[](1);
-        tokenIdArray[0] = tokenId;
-        CollaborativeMinterHolder cMH = CollaborativeMinterHolder(collaborativeMinterHolder);
-        uint256 secondarySaleId = cMH.submitSecondarySalesTransaction(to, tokenIdArray, cMH.latestReceived());
-        _safeTransfer(from, collaborativeMinterHolder, tokenId, _data);
-        cMH.executeSalesTransaction(secondarySaleId);
-    }
-
-    // Override transferFrom to allow for royalties from secondary sales
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public virtual override {
-        // create a secondary sales transaction, send NFT to contract, execute secondary sale
-        uint256[] memory tokenIdArray = new uint256[](1);
-        tokenIdArray[0] = tokenId;
-        CollaborativeMinterHolder cMH = CollaborativeMinterHolder(collaborativeMinterHolder);
-        uint256 secondarySaleId = cMH.submitSecondarySalesTransaction(to, tokenIdArray, cMH.latestReceived());
-        _transfer(from, collaborativeMinterHolder, tokenId);
-        cMH.executeSalesTransaction(secondarySaleId);
-    }
-
-    // send NFTs from holder to execute sales transactions
-    function sendFromHolder(address _from, address _to, uint256 _tokenId) public returns (bool) {
-      require(msg.sender == collaborativeMinterHolder, "Not collaborativeMinterHolder as sender");
-      _safeTransfer(_from, _to, _tokenId, "");
-      return true;
-    }
-
-    function checkApprovedOrOwner(address _spender, uint256 _tokenId) public view returns (bool){
-      return _isApprovedOrOwner(_spender, _tokenId);
-    }
-
 }

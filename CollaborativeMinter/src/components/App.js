@@ -196,9 +196,11 @@ function App() {
         const factoryAbi = CollaborativeMinterFactory.abi
 
         try{
+          console.log("we here")
           const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress)
           // test to see if the factory contract is valid
           factoryContract.methods.collaborativeMinters(0).call()
+          console.log("we here again")
           setValues( prevValues => {
             return {...prevValues, factoryContract: factoryContract}
           })
@@ -304,6 +306,10 @@ function App() {
   }
 
   const handleMerge = async () => {
+    const web3 = window.web3
+    const minterAbi = CollaborativeMinter.abi
+
+
 
   }
 
