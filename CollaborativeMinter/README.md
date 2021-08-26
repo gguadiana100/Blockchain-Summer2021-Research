@@ -17,10 +17,11 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 11. Solidity by Example's Multi-Sig Wallet
 12. Bernard Peh's tutorial "Calling the Function of Another Contract in Solidity"
 13. EatTheBlock's tutorial "Solidity Tutorial: Library"
+14. Jean Cvllr's tutorial "Solidity Tutorial: all about Libraries"
 
 ## References
 1. https://github.com/t4sk/solidity-multi-sig-wallet/blob/master/contracts/MultiSigWallet.sol
-2. https://github.com/PatrickAlphaC/nft-mix
+2. https://www.youtube.com/watch?v=p36tXHX1JD8&ab_channel=PatrickCollins
 3. https://medium.com/upstate-interactive/creating-a-contract-with-a-smart-contract-bdb67c5c8595
 4. https://www.youtube.com/watch?v=YPbgjPPC1d0&ab_channel=DappUniversity
 5. https://www.youtube.com/watch?v=hQAHSlTtcmY&ab_channel=WebDevSimplified
@@ -32,3 +33,4 @@ This app aims to be a way to collaboratively make NFTs in a turn-based manner.
 11. https://solidity-by-example.org/app/multi-sig-wallet/
 12. https://medium.com/@blockchain101/calling-the-function-of-another-contract-in-solidity-f9edfa921f4c
 13. https://www.youtube.com/watch?v=25MLAnIzXRw&ab_channel=EatTheBlocks
+14. https://jeancvllr.medium.com/solidity-tutorial-all-about-libraries-762e5a3692f9
