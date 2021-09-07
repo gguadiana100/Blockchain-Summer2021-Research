@@ -1,3 +1,8 @@
+const HDWalletProvider = require("@truffle/hdwallet-provider");
+
+let rinkebyProviderURL = "https://rinkeby.infura.io/v3/" + process.env.WEB3_INFURA_PROJECT_ID;
+let privateKey = process.env.PRIVATE_KEY;
+
 module.exports = {
   networks: {
     development: {
@@ -6,11 +11,12 @@ module.exports = {
       network_id: "*" // Match any network id
     },
     rinkeby: {
-      host: "127.0.0.1",
-      port: 8545,
-      from: "0xC4FB3Df2824AD424EbEF302970d67151051B5500",
+      provider: () => {
+        return new HDWalletProvider(privateKey, rinkebyProviderURL);
+      },
       network_id: 4,
-      gas: 4612388 // Gas limit used for deploys
+      networkCheckTimeout: 1000000,
+      timeoutBlocks: 200
     },
   },
   contracts_directory: './src/contracts/',
