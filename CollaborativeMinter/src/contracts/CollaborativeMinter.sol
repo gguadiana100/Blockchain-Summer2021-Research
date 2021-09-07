@@ -17,11 +17,8 @@ library CollaborativeMinterHolder {
       bool revoked;
       bool executed;
       bool executing; // check if library is executing transation
+      bool modifying; // check if transaction is being modified
       uint256 numConfirmations;
-    }
-
-    struct ConfirmationData{
-      mapping(uint => mapping(address => bool)) isConfirmed;
     }
 
     modifier onlyOwner(CollaborativeMinter _collaborativeMinter) { // restrict to only owners
@@ -42,8 +39,8 @@ library CollaborativeMinterHolder {
     }
 
     // restrict only to transactions that are not confirmed by caller
-    modifier salesTransactionNotConfirmed(uint256 _txIndex, ConfirmationData storage _confirmations) {
-      require(!_confirmations.isConfirmed[_txIndex][msg.sender], "sales transaction is already confirmed");
+    modifier salesTransactionNotConfirmed(uint256 _txIndex, CollaborativeMinter _collaborativeMinter) {
+      require(!_collaborativeMinter.getConfirmation(_txIndex, msg.sender), "sales transaction is already confirmed");
       _;
     }
 
@@ -75,21 +72,22 @@ library CollaborativeMinterHolder {
       _;
     }
 
-    function submitSalesTransaction(address _to, uint256[] memory _tokenIds,
-      SalesTransaction[] storage _salesTransactions)
-      payable ownedByContract(_tokenIds) public returns (uint256)
+    function submitSalesTransaction(address _from, address _to, uint256[] memory _tokenIds, uint256 _value,
+      SalesTransaction[] storage _salesTransactions, CollaborativeMinter _collaborativeMinter)
+      ownedByContract(_tokenIds, _collaborativeMinter) public returns (uint256)
     { // buyer sends sales transaction, returns transaction index
       uint256 txIndex = _salesTransactions.length;
 
       _salesTransactions.push(SalesTransaction({
-        from: msg.sender,
+        from: _from,
         to: _to,
         tokenIds: _tokenIds,
-        value: msg.value,
+        value: _value,
         secondarySale: false,
         revoked: false,
         executed: false,
         executing: false,
+        modifying: false,
         numConfirmations: 0
       }));
 
@@ -111,6 +109,7 @@ library CollaborativeMinterHolder {
         revoked: false,
         executed: false,
         executing: false,
+        modifying: false,
         numConfirmations: 0
       }));
 
@@ -118,46 +117,50 @@ library CollaborativeMinterHolder {
     }
 
     function approveSalesTransaction(uint256 _txIndex, SalesTransaction[] storage _salesTransactions,
-      ConfirmationData storage _confirmations, CollaborativeMinter _collaborativeMinter)
+      CollaborativeMinter _collaborativeMinter)
       onlyOwner(_collaborativeMinter)
-      salesTransactionExists(_txIndex)
-      salesTransactionNotExecuted(_txIndex)
-      salesTransactionNotConfirmed(_txIndex)
-      salesTransactionNotRevoked(_txIndex)
+      salesTransactionExists(_txIndex, _salesTransactions)
+      salesTransactionNotExecuted(_txIndex, _salesTransactions)
+      salesTransactionNotConfirmed(_txIndex, _collaborativeMinter)
+      salesTransactionNotRevoked(_txIndex, _salesTransactions)
       public returns (bool)
     { // owner approves sales transaction
       // update confirmations and number of confirmations
-      _confirmations.isConfirmed[_txIndex][msg.sender] = true;
+      _salesTransactions[_txIndex].modifying = true;
+      _collaborativeMinter.setConfirmation(_txIndex, msg.sender, true);
+      _salesTransactions[_txIndex].modifying = false;
       _salesTransactions[_txIndex].numConfirmations += 1;
 
       if(_salesTransactions[_txIndex].numConfirmations == _collaborativeMinter.numberOfOwners()){ // execute if approved by all owners
         _salesTransactions[_txIndex].executing = true;
-        executeSalesTransaction(_txIndex);
+        executeSalesTransaction(_txIndex, _salesTransactions, _collaborativeMinter);
         _salesTransactions[_txIndex].executing = false;
       }
       return true;
     }
 
     function denySalesTransaction(uint256 _txIndex, SalesTransaction[] storage _salesTransactions,
-      ConfirmationData storage _confirmations, CollaborativeMinter _collaborativeMinter)
+      CollaborativeMinter _collaborativeMinter)
       onlyOwner(_collaborativeMinter)
-      salesTransactionExists(_txIndex)
-      salesTransactionNotExecuted(_txIndex)
-      salesTransactionNotRevoked(_txIndex)
+      salesTransactionExists(_txIndex, _salesTransactions)
+      salesTransactionNotExecuted(_txIndex, _salesTransactions)
+      salesTransactionNotRevoked(_txIndex, _salesTransactions)
       public returns (bool)
     { // owner denies sales transaction
       // update confirmations and number of confirmations
-      require(_confirmations.isConfirmed[_txIndex][msg.sender], "sales transaction not approved by owner");
-      _confirmations.isConfirmed[_txIndex][msg.sender] = false;
+      require(_collaborativeMinter.getConfirmation(_txIndex,msg.sender), "sales transaction not approved by owner");
+      _salesTransactions[_txIndex].modifying = true;
+      _collaborativeMinter.setConfirmation(_txIndex, msg.sender, false);
+      _salesTransactions[_txIndex].modifying = false;
       _salesTransactions[_txIndex].numConfirmations -= 1;
       return true;
     }
 
     // sender revoke sales transaction to get ETH back
     function revokeSalesTransaction(uint256 _txIndex, SalesTransaction[] storage _salesTransactions) public
-      salesTransactionExists(_txIndex)
-      salesTransactionNotExecuted(_txIndex)
-      salesTransactionNotRevoked(_txIndex)
+      salesTransactionExists(_txIndex, _salesTransactions)
+      salesTransactionNotExecuted(_txIndex, _salesTransactions)
+      salesTransactionNotRevoked(_txIndex, _salesTransactions)
       returns (bool)
     {
       require(_salesTransactions[_txIndex].from == msg.sender, "must be account that submitted sales transaction");
@@ -197,7 +200,7 @@ library CollaborativeMinterHolder {
 
       // send each NFT from the smart contract to the new owner
       for(uint256 i = 0; i < tokens.length; i++){
-      _collaborativeMinter.executingTransfer(_txIndex, address(_collaborativeMinter), _salesTransactions[_txIndex].to, tokens[i], "");
+      _collaborativeMinter.executingTransfer(_txIndex, address(_collaborativeMinter), _salesTransactions[_txIndex].to, tokens[i]);
       }
 
       _salesTransactions[_txIndex].executed = true;
@@ -212,15 +215,11 @@ library CollaborativeMinterHolder {
       tokenIdArray[0] = _tokenId;
       uint256 secondarySaleId = submitSecondarySalesTransaction(_from, _to, tokenIdArray, _latestReceived, _salesTransactions);
       _salesTransactions[secondarySaleId].executing = true;
-      _collaborativeMinter.executingTransfer(secondarySaleId, _from, address(_collaborativeMinter), _tokenId, "");
+      _collaborativeMinter.executingTransfer(secondarySaleId, _from, address(_collaborativeMinter), _tokenId);
       executeSalesTransaction(secondarySaleId, _salesTransactions, _collaborativeMinter);
       _salesTransactions[secondarySaleId].executing = false;
     }
 
-    function getSalesTransaction(uint256 _txIndex, SalesTransaction[] storage _salesTransactions) public view
-      returns (SalesTransaction memory) {
-      return _salesTransactions[_txIndex];
-    }
 }
 
 // NFT Smart Contract Constructor
@@ -238,8 +237,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
     using CollaborativeMinterHolder for CollaborativeMinterHolder.SalesTransaction;
     CollaborativeMinterHolder.SalesTransaction[] public salesTransactions;
 
-    using CollaborativeMinterHolder for CollaborativeMinterHolder.ConfirmationData;
-    CollaborativeMinterHolder.ConfirmationData public confirmations; // check if a transaction is confirmed by an owner
+    mapping(uint => mapping(address => bool)) public isConfirmed;
 
     constructor (address[] memory _owners) ERC721 ("Collaborative Mint", "COMINT"){
       require(_owners.length > 0, "owners required");
@@ -280,8 +278,13 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       _;
     }
 
-    modifier currentlyExecuting(uint256 _txIndex) {
+    modifier currentlyExecuting(uint256 _txIndex) { // check if the transaction is currently executing
       require(salesTransactions[_txIndex].executing,"transaction must be currently executing");
+      _;
+    }
+
+    modifier currentlyModifying(uint256 _txIndex) { // check if the transaction is currently being modified
+      require(salesTransactions[_txIndex].modifying,"transaction must be being modified");
       _;
     }
 
@@ -328,7 +331,7 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
       return true;
     }
 
-    function isApprovedOrOwner(address _account, uint256 _tokenId) public returns (bool) {
+    function isApprovedOrOwner(address _account, uint256 _tokenId) public view returns (bool) {
       return _isApprovedOrOwner(_account, _tokenId);
     }
 
@@ -341,17 +344,52 @@ contract CollaborativeMinter is ERC721URIStorage, ERC721Holder{
 
     // Override safeTransferFrom to allow for royalties from secondary sales
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) public virtual override {
-      CollaborativeMinterHolder.safeTransferFrom(_from, _to, _tokenId, latestReceived, confirmations, this);
+      CollaborativeMinterHolder.safeTransferFrom(_from, _to, _tokenId, latestReceived, salesTransactions, this);
     }
 
     // Override safeTransferFrom to allow for royalties from secondary sales
     function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes memory _data) public virtual override {
-      CollaborativeMinterHolder.safeTransferFrom(_from, _to, _tokenId, latestReceived, confirmations, this);
+      CollaborativeMinterHolder.safeTransferFrom(_from, _to, _tokenId, latestReceived, salesTransactions, this);
     }
 
     // Override transferFrom to allow for royalties from secondary sales
     function transferFrom(address _from, address _to, uint256 _tokenId) public virtual override {
-      CollaborativeMinterHolder.safeTransferFrom(_from, _to, _tokenId, latestReceived, confirmations, this);
+      CollaborativeMinterHolder.safeTransferFrom(_from, _to, _tokenId, latestReceived, salesTransactions, this);
+    }
+
+    // submit a sales transaction
+    function submitSalesTransaction(address _to, uint256[] memory _tokenIds) payable public {
+      CollaborativeMinterHolder.submitSalesTransaction(msg.sender, _to, _tokenIds, msg.value, salesTransactions, this);
+    }
+
+    function approveSalesTransaction(uint256 _txIndex) public returns (bool) {
+      CollaborativeMinterHolder.approveSalesTransaction(_txIndex, salesTransactions, this);
+      return true;
+    }
+
+    function denySalesTransaction(uint256 _txIndex) public returns (bool) {
+      CollaborativeMinterHolder.denySalesTransaction(_txIndex, salesTransactions, this);
+      return true;
+    }
+
+    function revokeSalesTransaction(uint256 _txIndex) public returns (bool) {
+      CollaborativeMinterHolder.revokeSalesTransaction(_txIndex, salesTransactions);
+      return true;
+    }
+
+    // Retreive the sales transaction data
+    function getSalesTransaction(uint256 _txIndex) public view returns (CollaborativeMinterHolder.SalesTransaction memory) {
+        return salesTransactions[_txIndex];
+    }
+
+    function getConfirmation(uint256 _txIndex, address _owner) public view returns (bool) {
+      return isConfirmed[_txIndex][_owner];
+    }
+
+    function setConfirmation(uint256 _txIndex, address _owner, bool value)
+      currentlyModifying(_txIndex) public returns (bool) {
+      isConfirmed[_txIndex][_owner] = value;
+      return true;
     }
 
 
