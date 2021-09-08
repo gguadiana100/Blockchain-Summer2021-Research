@@ -305,9 +305,47 @@ function App() {
     }
   }
 
+  // merge NFTs into a composite NFT
   const handleMerge = async () => {
-    const web3 = window.web3
-    const minterAbi = CollaborativeMinter.abi
+    if(values.cominterContract._address === "Connect a cominter contract"){
+      addToLog("Create a cominter first!")
+      return
+    }
+
+    const cominterContract = values.cominterContract
+    addToLog("Starting to make composite NFT")
+
+    // set up the composite URI
+    let compositeURI = ""
+    let imageURLs = []
+    let authorDescription = "This Composite NFT was submitted by " + values.account + ". "
+    let descriptions = []
+    let names = []
+
+    // go through each token URI
+    for(i = 0; i < values.cominterTokenCount; i++){
+      let currentTokenURL = await cominterContract.methods.tokenURI(i);
+      $.getJSON(uri, function(data){
+      imageURLs.push()
+      descriptions.push()
+    }
+
+    let description = authorDescription
+
+    // Execute mergeCollaborativeMint
+    try {
+      let mergeTransaction = await cominterContract.methods.mergeCollaborativeMint(compositeURI).send(
+        {from: values.account},
+        function(error, result){
+          return result
+        })
+    }
+
+    catch {
+      addToLog("Failed to make composite NFT")
+      return
+    }
+
 
 
 
@@ -420,7 +458,12 @@ function App() {
         </form>
          {/* <button style={{ margin: 10 }} onClick={displayLatestIPFS}> Display latest from IPFS </button> */}
          <br/>
-         <button onClick={handleMerge}> Merge Collaborative Mint</button>
+
+         <form onSubmit={handleMerge}>
+           <input type='text' placeholder='name of the composite NFT' ref={mergeNameSubmit}/>
+           <input type='text' placeholder='description of the composite NFT' ref={mergeDescriptionSubmit}/>
+           <input type='submit' value='Merge Collaborative Mint'/>
+         </form>
       </div>
 
       <div>
