@@ -33,6 +33,8 @@ function App() {
   const tokenIdsCreateTransaction = useRef()
   const toTransfer = useRef()
   const tokenIdTransfer = useRef()
+  const mergeNameSubmit = useRef()
+  const mergeDescriptionSubmit = useRef()
 
   function addToLog (...args) {
     let msg = ""
@@ -74,7 +76,7 @@ function App() {
     }
     addToLog("Submitting file to IPFS...")
     const result = await ipfs.add(values.buffer)
-    addToLog("IPFS result of image", result)
+    addToLog("IPFS result of image: ", result)
 
     addToLog("Creating collectible")
 
@@ -317,20 +319,64 @@ function App() {
 
     // set up the composite URI
     let compositeURI = ""
+    let compositeImageURI = ""
     let imageURLs = []
     let authorDescription = "This Composite NFT was submitted by " + values.account + ". "
-    let descriptions = []
-    let names = []
+    let description = authorDescription + mergeDescriptionSubmit.current.value + ". "
+    let name = mergeNameSubmit.current.value
 
-    // go through each token URI
-    for(i = 0; i < values.cominterTokenCount; i++){
+    // go through each token URI and extract data from tokenURI JSON
+    for(let i = 0; i < values.cominterTokenCount; i++){
       let currentTokenURL = await cominterContract.methods.tokenURI(i);
-      $.getJSON(uri, function(data){
-      imageURLs.push()
-      descriptions.push()
+      $.getJSON(currentTokenURL, function(data){
+        imageURLs.push(data.image)
+        description = description + "Stage " + i + ": " + data.name + ". " + data.description + ". "
+      })
     }
 
-    let description = authorDescription
+    // create composite image
+    let compositeCanvas = document.createElement("CANVAS")
+    let compositeCanvasContext = compositeCanvas.getContext("2d");
+    let totalWidth = 0;
+    let totalHeight = 0;
+
+    // add each image to the canvas
+    for(let i = 0; i < values.cominterTokenCount; i++){
+      let currentImg = document.createElement("img");
+      currentImg.onload = function() {
+        // draw on canvas with start positions and pixel width and height
+        compositeCanvasContext.drawImage(currentImg, totalWidth, 0, this.width, this.height);
+        // update new width start position and total height
+        totalWidth = totalWidth + this.width;
+        totalHeight = Math.max(totalHeight,this.height);
+      }
+      currentImg.src = imageURLs[i];
+    }
+
+    // get image array buffer
+    let compositeImageData = compositeCanvas.getImageData(0, 0, totalWidth, totalHeight);
+    let compositeImageBuffer = compositeImageData.data.buffer;
+
+    // upload image to IPFS
+    addToLog("Submitting composite image to IPFS...")
+    const result = await ipfs.add(compositeImageBuffer)
+    addToLog("IPFS result of composite image: ", result)
+    compositeImageURI = "https://ipfs.io/ipfs/" + result.path // IPFS URL
+
+    // create metadata JSON for IPFS
+    const metadataJson = JSON.stringify({
+      "description": description,
+      "image": compositeImageURI,
+      "name": name,
+    });
+
+    // upload JSON to IPFS
+    addToLog("Submitting composite metadata to IPFS...")
+    const metadataResult = await ipfs.add(metadataJson)
+    addToLog("IPFS result of composite metadata: ", metadataResult)
+
+    let compositeURI = "https://ipfs.io/ipfs/" + metadataResult.path
+    addToLog(compositeURI)
 
     // Execute mergeCollaborativeMint
     try {
@@ -339,16 +385,22 @@ function App() {
         function(error, result){
           return result
         })
+
+      const cominterTokenCount = await cominterContract.methods.tokenCounter().call()
+      addToLog("Finished creating composite NFT")
+
+      // update IPFS Hashes
+      setValues(prevValues => {
+        return {...prevValues,
+          ipfsHashes: [...prevValues.ipfsHashes, result.path, metadataResult.path],
+          cominterTokenCount: cominterTokenCount,
+      })
     }
 
     catch {
       addToLog("Failed to make composite NFT")
       return
     }
-
-
-
-
   }
 
   const onTransactionSubmit = async (event) => {
@@ -460,8 +512,8 @@ function App() {
          <br/>
 
          <form onSubmit={handleMerge}>
-           <input type='text' placeholder='name of the composite NFT' ref={mergeNameSubmit}/>
-           <input type='text' placeholder='description of the composite NFT' ref={mergeDescriptionSubmit}/>
+           <input type='text' placeholder='name of composite NFT' ref={mergeNameSubmit}/>
+           <input type='text' placeholder='description of your work' ref={mergeDescriptionSubmit}/>
            <input type='submit' value='Merge Collaborative Mint'/>
          </form>
       </div>
