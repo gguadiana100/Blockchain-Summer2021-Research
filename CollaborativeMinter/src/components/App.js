@@ -31,6 +31,7 @@ function App() {
   const salesTransactionSubmit = useRef()
   const toCreateTransaction = useRef()
   const tokenIdsCreateTransaction = useRef()
+  const valueCreateTransaction = useRef()
   const toTransfer = useRef()
   const tokenIdTransfer = useRef()
   const mergeNameSubmit = useRef()
@@ -305,6 +306,11 @@ function App() {
         }
       })
     }
+    addToLog("Finished displaying tokenURIs")
+
+    addToLog("Beginning to displaying sales transactions")
+
+    addToLog("Finished displaying sales transactions")
   }
 
   // merge NFTs into a composite NFT
@@ -375,7 +381,7 @@ function App() {
     const metadataResult = await ipfs.add(metadataJson)
     addToLog("IPFS result of composite metadata: ", metadataResult)
 
-    let compositeURI = "https://ipfs.io/ipfs/" + metadataResult.path
+    compositeURI = "https://ipfs.io/ipfs/" + metadataResult.path
     addToLog(compositeURI)
 
     // Execute mergeCollaborativeMint
@@ -389,12 +395,12 @@ function App() {
       const cominterTokenCount = await cominterContract.methods.tokenCounter().call()
       addToLog("Finished creating composite NFT")
 
-      // update IPFS Hashes
+      // update IPFS Hashes and cominterTokenCount
       setValues(prevValues => {
         return {...prevValues,
           ipfsHashes: [...prevValues.ipfsHashes, result.path, metadataResult.path],
           cominterTokenCount: cominterTokenCount,
-      })
+      }})
     }
 
     catch {
@@ -406,8 +412,8 @@ function App() {
   const onTransactionSubmit = async (event) => {
      event.preventDefault()
      switch (document.getElementById("salesTransactionMode").text){
-       case "Confirm Transaction":
-        confirmTransaction();
+       case "Approve Transaction":
+        approveTransaction();
        case "Deny Transaction":
         denyTransaction();
        case "Revoke Transaction":
@@ -415,24 +421,88 @@ function App() {
      }
    }
 
-  const confirmTransaction = async () => {
-
+  const approveTransaction = async () => {
+    let transactionID = salesTransactionSubmit.current.value
+    try{
+      addToLog("Attempting to approve transaction: ", transactionID)
+      await values.cominterContract.methods.approveSalesTransaction(transactionID)
+      addToLog("Successfully approved transaction")
+    }
+    catch{
+      addToLog("Failed to approve transaction: ", transactionID)
+    }
   }
 
   const denyTransaction = async () => {
-
+    let transactionID = salesTransactionSubmit.current.value
+    try{
+      addToLog("Attempting to deny transaction: ", transactionID)
+      await values.cominterContract.methods.denySalesTransaction(transactionID)
+      addToLog("Successfully denied transaction")
+    }
+    catch{
+      addToLog("Failed to deny transaction: ", transactionID)
+    }
   }
 
   const revokeTransaction = async () => {
-
+    let transactionID = salesTransactionSubmit.current.value
+    try{
+      addToLog("Attempting to revoke transaction: ", transactionID)
+      await values.cominterContract.methods.approveSalesTransaction(transactionID)
+      addToLog("Successfully revoked transaction")
+    }
+    catch{
+      addToLog("Failed to revoke transaction: ", transactionID)
+      return
+    }
   }
 
   const onCreateTransaction = async (event) => {
     event.preventDefault()
+    let recipient = toCreateTransaction.current.value
+    let payment = parseInt(valueCreateTransaction.current.value)
+
+    // check if we have a number
+    if(!payment) {
+      addToLog("Provide valid output to create transaction")
+      return
+    }
+
+    try{
+      // get array
+      let tokenIds = JSON.parse(tokenIdsCreateTransaction.current.value)
+    }
+    catch{
+      addToLog("Provide valid output to create transaction")
+      return
+    }
+
+    values.cominterContract.methods.submitSalesTransaction(recipient,tokenIds,payment).send(
+      {from: values.account, value: payment},
+      function(error, result){
+        return result
+      })
   }
 
   const onTransfer = async (event) => {
     event.preventDefault()
+    let recipient = toTransfer.current.value
+    let tokenId = tokenIdTransfer.current.value
+
+    try{
+      addToLog("Attempting to transfer token: ", tokenId)
+      values.cominterContract.methods.safeTransferFrom(values.account, recipient, tokenId).send(
+        {from: values.account},
+        function(error, result){
+          return result
+        })
+      addToLog("Successfully transfered token: ", tokenId)
+    }
+    catch{
+      addToLog("Unable to transfer token: ", tokenId)
+      return
+    }
   }
 
   useEffect(() => { // do once at startup
@@ -520,11 +590,11 @@ function App() {
 
       <div>
         <p>
-          <b> Manage Cominter Transactions </b>  <br/> {values.salesTransactions}
+          <b> Manage Cominter Sales Transactions </b>  <br/> {values.salesTransactions}
         </p>
         <form onSubmit= {onTransactionSubmit}>
           <select id="salesTransactionMode">
-            <option> Confirm Transaction </option>
+            <option> Approve Transaction </option>
             <option> Deny Transaction </option>
             <option> Revoke Transaction </option>
           </select>
@@ -537,6 +607,7 @@ function App() {
         <form onSubmit= {onCreateTransaction}>
           <input type='text' placeholder='recipient address' ref={toCreateTransaction}/>
           <input type='text' placeholder='[tokenID1,...]' ref={tokenIdsCreateTransaction}/>
+          <input type='text' placeholder='payment in ETH' ref={valueCreateTransaction}/>
           <input type='submit' value='Submit'/>
         </form>
         <p>
