@@ -1,7 +1,7 @@
 # Collaborative Minter
 
 ## Description
-This app aims to be a way to collaboratively make NFTs in a turn-based manner.
+This app aims to be a way to collaboratively make NFTs in a turn-based manner. WARNING: A significant portion of this project has not been fully tested including the sales and transactions mechanisms. 
 
 ## Credits
 1. Multi-signature wallet from Smart Contract Programmer's MultiSigWallet tutorial "How to Code a Multi-Sig Wallet in Solidity (0.5)"
