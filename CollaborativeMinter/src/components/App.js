@@ -469,9 +469,11 @@ function App() {
       return
     }
 
+    let tokenIds
+
     try{
       // get array
-      let tokenIds = JSON.parse(tokenIdsCreateTransaction.current.value)
+      tokenIds = JSON.parse(tokenIdsCreateTransaction.current.value)
     }
     catch{
       addToLog("Provide valid output to create transaction")
